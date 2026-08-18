@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
-	"encoding/csv"
-	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,108 +12,62 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	version = "0.1.0"
-)
-
 var (
-	bindAddr = flag.String("bindAddr", "localhost", `Local interface address to bind to. "localhost" only allows access from the local host. "0.0.0.0" binds to all network interfaces.`)
-	port     = flag.Int("port", 8080, "Port to listen on")
-	dataDir  = flag.String("dataDir", ".", "Location of the data directory. It contains CSV files with IMDb IDs and a \"metas\" subdirectory with meta JSON files")
-	logLevel = flag.String("logLevel", "info", `Log level to show only logs with the given and more severe levels. Can be "debug", "info", "warn", "error"`)
-	cacheAge = flag.String("cacheAge", "24h", "Max age for a client or proxy cache. The format must be acceptable by Go's 'time.ParseDuration()', for example \"24h\".")
-)
-
-var (
-	manifest = stremio.Manifest{
-		ID:          "tv.deflix.stremio-film-festivals",
-		Name:        "Film festivals",
-		Description: "Multiple catalogs of film festival winners: Academy Award for Best Picture, Cannes Film Festival Palme d'Or winners, Venice Film Festival Golden Lion winners, Berlin International Film Festival Golden Bear winners",
-		Version:     version,
-
-		ResourceItems: []stremio.ResourceItem{
-			{
-				Name: "catalog",
-			},
-		},
-		Types:    []string{"movie"},
-		Catalogs: catalogs,
-
-		IDprefixes: []string{"tt"},
-		// Must use www.deflix.tv instead of just deflix.tv because GitHub takes care of redirecting non-www to www and this leads to HTTPS certificate issues.
-		Background: "https://www.deflix.tv/images/Logo-1024px.png",
-		Logo:       "https://www.deflix.tv/images/Logo-250px.png",
-	}
-
-	catalogs = []stremio.CatalogItem{
-		{
-			Type: "movie",
-			ID:   "academy-awards-winners",
-			Name: "Academy Award for Best Picture winners",
-		},
-		{
-			Type: "movie",
-			ID:   "palme-dor-winners",
-			Name: "Cannes Film Festival Palme d'Or winners",
-		},
-		{
-			Type: "movie",
-			ID:   "golden-lion-winners",
-			Name: "Venice Film Festival Golden Lion winners",
-		},
-		{
-			Type: "movie",
-			ID:   "golden-bear-winners",
-			Name: "Berlin International Film Festival Golden Bear winners",
-		},
-	}
-)
-
-const (
-	redirectURL = "https://www.deflix.tv"
-)
-
-var (
-	responses = make(map[string][]stremio.MetaPreviewItem, len(catalogs))
+	bindAddr  = flag.String("bindAddr", getEnv("BIND_ADDR", "0.0.0.0"), `Local interface address to bind to. "localhost" only allows access from the local host. "0.0.0.0" binds to all network interfaces.`)
+	port      = flag.Int("port", getEnvInt("PORT", 8080), "Port to listen on")
+	dataDir   = flag.String("dataDir", getEnv("DATA_DIR", "data"), `Location of the data directory containing catalog CSV files and optional "metas" subdirectory`)
+	logLevel  = flag.String("logLevel", getEnv("LOG_LEVEL", "info"), `Log level: "debug", "info", "warn", "error"`)
+	cacheAge  = flag.String("cacheAge", getEnv("CACHE_AGE", "24h"), `Max age for client/proxy caching (e.g. "24h")`)
+	orderMode = flag.String("order", getEnv("ORDER_MODE", OrderModeDailyRandom), `Catalog ordering mode: "daily-random" (default), "chronological-desc", "chronological-asc"`)
 )
 
 func init() {
-	// Timeout for global default HTTP client (for when using `http.Get()`)
-	http.DefaultClient.Timeout = 5 * time.Second
+	http.DefaultClient.Timeout = 10 * time.Second
 }
 
 func main() {
 	flag.Parse()
 
-	// Prep
-
+	// 1. Initialize Logger
 	logger, err := stremio.NewLogger(*logLevel)
 	if err != nil {
 		panic(err)
 	}
 
+	logger.Info("Starting Stremio Film Festivals Addon",
+		zap.String("version", version),
+		zap.String("orderMode", *orderMode),
+	)
+
+	// 2. Parse Cache Age Duration
 	cacheAgeDuration, err := time.ParseDuration(*cacheAge)
 	if err != nil {
-		logger.Fatal("Couldn't parse cacheAge", zap.Error(err))
+		logger.Fatal("Couldn't parse cacheAge duration", zap.Error(err))
 	}
-	logger.Info("Cache age set", zap.Duration("duration", cacheAgeDuration))
-	// Clean input
-	if strings.HasSuffix(*dataDir, "/") {
-		*dataDir = strings.TrimRight(*dataDir, "/")
+	logger.Info("Cache age configured", zap.Duration("duration", cacheAgeDuration))
+
+	// 3. Resolve Data Directory
+	resolvedDataDir := resolveDataDir(*dataDir)
+	logger.Info("Loading festival catalogs from data directory", zap.String("dataDir", resolvedDataDir))
+
+	// 4. Load Catalogs into Memory
+	catalogStore, err := LoadCatalogs(resolvedDataDir, logger)
+	if err != nil {
+		logger.Fatal("Failed to load festival catalogs", zap.Error(err))
+	}
+	logger.Info("Successfully loaded festival catalogs",
+		zap.Int("primaryCatalogs", catalogStore.TotalCatalogs()),
+	)
+
+	// 5. Initialize Discovery / Randomization Engine
+	randomizer := NewRandomizer(catalogStore, *orderMode, logger)
+
+	// 6. Build Manifest and Catalog Handlers
+	manifest := BuildManifest()
+	catalogHandlers := map[string]stremio.CatalogHandler{
+		"movie": createMovieHandler(randomizer),
 	}
 
-	// Initialize catalogs
-
-	logger.Info("Initializing catalogs...")
-	for _, catalogItem := range catalogs {
-		id := catalogItem.ID
-		responses[id] = createCatalogResponse(id, logger)
-	}
-	logger.Info("Initialized catalogs")
-
-	// Set up addon
-
-	catalogHandlers := map[string]stremio.CatalogHandler{"movie": movieHandler}
 	options := stremio.Options{
 		BindAddr:            *bindAddr,
 		Port:                *port,
@@ -125,70 +77,49 @@ func main() {
 		CachePublicCatalogs: true,
 		HandleEtagCatalogs:  true,
 	}
+
 	addon, err := stremio.NewAddon(manifest, catalogHandlers, nil, options)
 	if err != nil {
-		logger.Fatal("Couldn't create addon", zap.Error(err))
+		logger.Fatal("Couldn't create Stremio addon", zap.Error(err))
 	}
 
-	// Go!
+	logger.Info("Server running and listening for Stremio requests",
+		zap.String("bindAddr", *bindAddr),
+		zap.Int("port", *port),
+	)
 
+	// 7. Run Server (graceful shutdown on SIGINT / SIGTERM)
 	addon.Run()
 }
 
-func createCatalogResponse(catalog string, logger *zap.Logger) []stremio.MetaPreviewItem {
-	var result []stremio.MetaPreviewItem
-
-	records := readCSV(*dataDir+"/"+catalog+".csv", logger)
-	metas := readMetas(records, *dataDir+"/metas", logger)
-	for _, meta := range metas {
-		var item stremio.MetaPreviewItem
-		if err := json.Unmarshal(meta, &item); err != nil {
-			logger.Warn("Couldn't unmarshal meta JSON into stremio.MetaPreviewItem", zap.Error(err))
-		}
-		result = append(result, item)
+func resolveDataDir(dir string) string {
+	clean := strings.TrimRight(dir, "/")
+	if _, err := os.Stat(clean); err == nil {
+		return clean
 	}
-
-	return result
+	// Fallback to "data" if "." was given but files are in "data"
+	if _, err := os.Stat("data"); err == nil {
+		return "data"
+	}
+	// Fallback to "/data" in container
+	if _, err := os.Stat("/data"); err == nil {
+		return "/data"
+	}
+	return clean
 }
 
-func readCSV(filePath string, logger *zap.Logger) [][]string {
-	fileBytes, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		logger.Fatal("Couldn't read file", zap.Error(err))
+func getEnv(key, defaultVal string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
 	}
-	csvReader := csv.NewReader(bytes.NewReader(fileBytes))
-	records, err := csvReader.ReadAll()
-	if err != nil {
-		logger.Fatal("Couldn't read CSV", zap.Error(err))
-	}
-	return records
+	return defaultVal
 }
 
-func readMetas(records [][]string, metasDir string, logger *zap.Logger) [][]byte {
-	headRecord := records[0]
-	imdbIndex := 0
-	found := false
-	for ; imdbIndex < len(headRecord); imdbIndex++ {
-		if headRecord[imdbIndex] == "IMDb ID" {
-			found = true
-			break
+func getEnvInt(key string, defaultVal int) int {
+	if val := os.Getenv(key); val != "" {
+		if i, err := strconv.Atoi(val); err == nil {
+			return i
 		}
 	}
-	if !found {
-		logger.Fatal("Couldn't find \"IMDb ID\" in CSV header", zap.Strings("csvHeader", headRecord))
-	}
-
-	var result [][]byte
-	for _, record := range records[1:] {
-		imdbID := record[imdbIndex]
-		// We assume that the metafetcher has been used to already write all meta JSON files for all required IMDb IDs to the directory, so we can directly read the files here via the IMDb ID + ".json", instead of going through the actual files and only read it when it matches one of our IMDb IDs.
-		fileContent, err := ioutil.ReadFile(metasDir + "/" + imdbID + ".json")
-		if err != nil {
-			logger.Warn("Couldn't read meta file for IMDb ID", zap.String("imdbID", imdbID), zap.Error(err))
-			continue
-		}
-		result = append(result, fileContent)
-	}
-
-	return result
+	return defaultVal
 }
