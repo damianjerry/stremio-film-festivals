@@ -8,6 +8,7 @@
 *.dll
 *.so
 *.dylib
+stremio-film-festivals
 
 # Test binary, built with `go test -c`
 *.test
@@ -36,3 +37,4 @@
 # End of https://www.gitignore.io/api/go,visualstudiocode
 
 /data/metas
+.DS_Store

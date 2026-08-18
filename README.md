@@ -1,64 +1,197 @@
-stremio-film-festivals
-==================
+# Film Festivals — Stremio Addon
 
-Stremio addon for multiple film festival catalogs:
+A comprehensive Stremio addon for discovering arthouse, auteur, and award-winning international cinema across the world's most prestigious film festivals.
 
-- Academy Award for Best Picture winners
-- Cannes Film Festival Palme d'Or winners
-- Venice Film Festival Golden Lion winners
-- Berlin International Film Festival Golden Bear winners
+---
 
-Contents
---------
+## Features
 
-1. [Install](#install)
-2. [Run locally](#run-locally)
-   1. [Configuration](#configuration)
+* **37+ Curated Catalogs**: Spanning the major international festival circuits, auteur showcases, and documentary awards.
+* **Deterministic Daily Discovery**: Each day, catalogs feature a deterministically randomized discovery ordering so users discover different hidden gems every day, while remaining stable throughout the day for seamless caching.
+* **Complete Historical Datasets**: Every winning feature film from inaugural editions to the present is preserved and browsable.
+* **IMDb & Cinemeta Native Integration**: Standard IMDb ID mapping (`tt...`) ensures posters, metadata, synopsis, trailers, and stream resolution work natively across Stremio Web, Desktop, Android, and TV apps.
+* **Zero External Dependencies at Runtime**: Fast in-memory catalog store with bundled data, instant cold starts, and resilience.
+* **ElfHosted & Docker Ready**: Easy to host as a standalone containerized service with full environment variable configuration.
 
-Install
--------
+---
 
-This addon is a remote addon, so it's an HTTP web service and Stremio just sends HTTP requests to it. You dont't need to run any untrusted code on your machine.
+## Festival & Award Catalogs
 
-You only have to enter the addon URL in the search box of the addons section of Stremio, like this:  
-`https://stremio-film-festivals.deflix.tv/manifest.json`
+### 🇫🇷 Cannes Film Festival
+* **Palme d'Or** (`cannes-palme-dor` / alias `palme-dor-winners`) — Highest prize of the Official Competition (1939–present).
+* **Grand Prix** (`cannes-grand-prix`) — 2nd most prestigious award at Cannes.
+* **Jury Prize** (`cannes-jury-prize`) — Prix du Jury celebrating distinctive auteur cinema.
+* **Best Director** (`cannes-best-director`) — Prix de la mise en scène.
+* **Best Screenplay** (`cannes-best-screenplay`) — Prix du scénario.
+* **Best Actress** (`cannes-best-actress`) — Prix d'interprétation féminine.
+* **Best Actor** (`cannes-best-actor`) — Prix d'interprétation masculine.
 
-That's it!
+### 🇮🇹 Venice International Film Festival
+* **Golden Lion** (`venice-golden-lion` / alias `golden-lion-winners`) — Leone d'Oro for Best Film (1949–present).
+* **Grand Jury Prize** (`venice-grand-jury-prize`) — Leone d'Argento - Gran Premio della Giuria.
+* **Silver Lion for Best Director** (`venice-silver-lion-director`) — Premio per la migliore regia.
+* **Best Screenplay** (`venice-best-screenplay`) — Golden Osella / Premio per la migliore sceneggiatura.
+* **Coppa Volpi (Best Actress)** (`venice-coppa-volpi-actress`) — Volpi Cup for Best Actress.
+* **Coppa Volpi (Best Actor)** (`venice-coppa-volpi-actor`) — Volpi Cup for Best Actor.
 
-Run locally
------------
+### 🇩🇪 Berlin International Film Festival (Berlinale)
+* **Golden Bear** (`berlin-golden-bear` / alias `golden-bear-winners`) — Goldener Bär for Best Film (1951–present).
+* **Silver Bear Grand Jury Prize** (`berlin-silver-bear-grand-jury`) — Großer Preis der Jury.
+* **Silver Bear for Best Director** (`berlin-silver-bear-director`) — Silberner Bär für die beste Regie.
+* **Silver Bear for Best Screenplay** (`berlin-silver-bear-screenplay`) — Silberner Bär für das beste Drehbuch.
+* **Silver Bear for Best Actress / Leading Performance** (`berlin-silver-bear-actress`) — Silberner Bär für die beste Darstellerin / Hauptrolle.
+* **Silver Bear for Best Actor** (`berlin-silver-bear-actor`) — Silberner Bär für den besten Darsteller.
 
-Alternatively you can also run the addon locally and use that in Stremio. The addon is written in Go and compiles to a single executable file without dependencies, so it's really easy to run on your machine.
+### 🇨🇭 Locarno Film Festival
+* **Golden Leopard** (`locarno-golden-leopard`) — Pardo d'oro for Best Film (1946–present).
+* **Special Jury Prize** (`locarno-special-jury-prize`) — Premio speciale della giuria.
+* **Best Direction** (`locarno-best-direction`) — Pardo per la miglior regia.
 
-You can use one of the precompiled binaries from GitHub:
+### 🇺🇸 Sundance Film Festival
+* **Grand Jury Prize (Dramatic)** (`sundance-grand-jury-dramatic`) — Premier U.S. Dramatic Competition award.
+* **Grand Jury Prize (Documentary)** (`sundance-grand-jury-doc`) — Premier U.S. Documentary Competition award.
+* **Audience Award (Dramatic)** (`sundance-audience-dramatic`) — Audience Favorite in Dramatic Competition.
+* **Audience Award (Documentary)** (`sundance-audience-doc`) — Audience Favorite in Documentary Competition.
+* **Directing Award (Dramatic)** (`sundance-directing-dramatic`) — Best Directing in Dramatic Feature.
+* **Directing Award (Documentary)** (`sundance-directing-doc`) — Best Directing in Documentary Feature.
 
-1. Download the binary for your OS from <https://github.com/Deflix-tv/stremio-film-festivals/releases>
-2. Simply run the executable binary
-3. To stop the program press `Ctrl-C` (or `⌃-C` on macOS)
+### 🇨🇦 Toronto International Film Festival (TIFF)
+* **People's Choice Award** (`tiff-peoples-choice`) — Top award voted by TIFF festival audiences (1978–present).
 
-Or use Docker:
+### 🇳🇱 International Film Festival Rotterdam (IFFR)
+* **Tiger Award** (`rotterdam-tiger-award`) — Premier award for innovative, cutting-edge arthouse and emerging auteurs.
 
-1. `docker pull doingodswork/stremio-film-festivals`
-2. `docker run --name stremio-film-festivals -v /path/to/data:/data -p 8080:8080 doingodswork/stremio-film-festivals`
-3. To stop the container: `docker stop stremio-film-festivals`
+### 🇪🇸 San Sebastián International Film Festival
+* **Golden Shell** (`san-sebastian-golden-shell`) — Concha de Oro for Best Film (1953–present).
+* **Silver Shell for Best Director** (`san-sebastian-best-director`) — Concha de Plata a la mejor dirección.
 
-Then similar to installing the publicly hosted addon you just enter the following URL in the search box of the addon section of Stremio:  
-`http://localhost:8080/manifest.json`
+### 🇨🇿 Karlovy Vary International Film Festival (KVIFF)
+* **Crystal Globe** (`karlovy-vary-crystal-globe`) — Křišťálový glóbus for Best Film (1946–present).
 
-### Configuration
+### 🇬🇧 BFI London Film Festival
+* **Best Film Award** (`bfi-london-best-film`) — Official Competition Best Film & Sutherland Trophy winners.
 
-The following options can be configured via command line argument:
+### 🇳🇱 IDFA (International Documentary Film Festival Amsterdam)
+* **Best Feature Documentary** (`idfa-best-film`) — Top prize at the world's leading documentary festival.
 
+### 🇺🇸 SXSW Film & TV Festival
+* **Grand Jury Award (Narrative)** (`sxsw-grand-jury-narrative`) — Grand Jury Award for Narrative Feature.
+
+### 🌍 FIPRESCI (International Federation of Film Critics)
+* **Grand Prix (Film of the Year)** (`fipresci-grand-prix`) — Voted by international critics across worldwide cinema.
+
+### 🇺🇸 Academy Awards (Oscars)
+* **Best Picture** (`academy-awards-best-picture` / alias `academy-awards-winners`) — Best Picture winners (1927–present).
+
+---
+
+## Discovery & Randomization Engine
+
+Standard Stremio catalogs frequently show only the newest or oldest entries, leaving dozens of classic or mid-era gems buried.
+
+This addon features **Deterministic Daily Randomization**:
+
+1. **Daily Discovery Rotation**: Every catalog has its complete historical dataset deterministically permuted based on a daily seed (`hash(catalog_id + ":" + YYYY-MM-DD)`).
+2. **Stable Within the Day**: Repeated requests from Stremio on the same day receive the exact same ordering, ensuring full compatibility with HTTP caching (`Cache-Control: max-age=24h`) and `ETag` 304 Not Modified validations.
+3. **Daily Refresh**: At midnight UTC, a new seed produces a new stable discovery permutation.
+4. **Complete Dataset Preserved**: All films remain accessible; users can scroll through the entire catalog history.
+5. **Configurable Ordering Modes**:
+   * `daily-random` (default): Deterministic daily rotating shuffle.
+   * `chronological-desc`: Sorted newest to oldest.
+   * `chronological-asc`: Sorted oldest to newest.
+
+---
+
+## Installation
+
+### In Stremio
+Enter the manifest URL in the Addon search box in Stremio:
 ```text
-Usage of stremio-film-festivals:
-  -bindAddr string
-        Local interface address to bind to. "localhost" only allows access from the local host. "0.0.0.0" binds to all network interfaces. (default "localhost")
-  -cacheAge string
-        Max age for a client or proxy cache. The format must be acceptable by Go's 'time.ParseDuration()', for example "24h". (default "24h")
-  -dataDir string
-        Location of the data directory. It contains CSV files with IMDb IDs and a "metas" subdirectory with meta JSON files (default ".")
-  -logLevel string
-        Log level to show only logs with the given and more severe levels. Can be "debug", "info", "warn", "error" (default "info")
-  -port int
-        Port to listen on (default 8080)
+https://stremio-film-festivals.deflix.tv/manifest.json
 ```
+Or for your self-hosted / ElfHosted deployment:
+```text
+https://<your-domain>/manifest.json
+```
+
+---
+
+## Running Locally
+
+### Option 1: Native Go Executable
+```bash
+# Build
+go build -o stremio-film-festivals .
+
+# Run
+./stremio-film-festivals -port 8080 -dataDir data -order daily-random
+```
+
+### Option 2: Docker
+```bash
+# Build Docker image
+docker build -t stremio-film-festivals .
+
+# Run container
+docker run -d --name stremio-film-festivals -p 8080:8080 stremio-film-festivals
+```
+
+---
+
+## Configuration & Environment Variables
+
+All parameters can be configured via command-line flags or environment variables:
+
+| Flag | Environment Variable | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `-bindAddr` | `BIND_ADDR` | `0.0.0.0` | Network interface address to bind to |
+| `-port` | `PORT` | `8080` | HTTP port to listen on |
+| `-dataDir` | `DATA_DIR` | `data` | Directory containing catalog CSV files |
+| `-logLevel` | `LOG_LEVEL` | `info` | Log verbosity (`debug`, `info`, `warn`, `error`) |
+| `-cacheAge` | `CACHE_AGE` | `24h` | HTTP Cache-Control max-age header duration |
+| `-order` | `ORDER_MODE` | `daily-random` | Ordering mode (`daily-random`, `chronological-desc`, `chronological-asc`) |
+
+---
+
+## Maintainability: Adding a New Festival
+
+Adding a new festival or award category is straightforward and declarative:
+
+1. **Add the CSV dataset**:
+   Create a CSV file in `data/<festival-id>.csv` with header:
+   ```csv
+   year,title,IMDb ID
+   2024,Example Film,tt1234567
+   ```
+2. **Register the catalog in `config.go`**:
+   Add an entry to `FestivalCatalogs`:
+   ```go
+   {
+       ID:          "festival-award-name",
+       Name:        "Film Festivals — Festival — Award",
+       Festival:    "Festival Name",
+       Award:       "Award Name",
+       Description: "Description of the award",
+       CSVFile:     "festival-award-name.csv",
+   },
+   ```
+3. **Run tests**:
+   ```bash
+   go test ./...
+   ```
+   All tests will automatically validate the new CSV schema, check IMDb IDs, and verify manifest inclusion.
+
+---
+
+## ElfHosted Deployment Notes
+
+* The container is built using a secure multi-stage build (`gcr.io/distroless/static:nonroot`) and runs as an unprivileged user (`nonroot:nonroot`).
+* Festival datasets are pre-packaged directly inside the container (`/data`), meaning no external volume mounting is strictly required for basic operation.
+* Standard healthcheck endpoint is available at `/health`.
+* Reverse proxying (Traefik/Nginx) with standard HTTP headers is fully supported.
+
+---
+
+## License
+
+MIT License.
