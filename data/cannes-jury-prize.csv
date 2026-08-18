@@ -7,15 +7,12 @@ year,title,IMDb ID
 2022,The Eight Mountains,tt14641542
 2022,EO,tt19652910
 2021,Ahed's Knee,tt12494638
-2021,Memoria,tt8399288
 2019,Bacurau,tt2762506
-2019,Les Misérables,tt10199590
 2018,Capernaum,tt8267604
 2017,Loveless,tt6304162
 2016,American Honey,tt3721936
 2015,The Lobster,tt3464902
 2014,Goodbye to Language,tt2400275
-2014,Mommy,tt3612616
 2013,"Like Father, Like Son",tt2331143
 2012,The Angels' Share,tt1924394
 2011,Polisse,tt1661420
@@ -37,12 +34,12 @@ year,title,IMDb ID
 1998,The Celebration,tt0154420
 1998,Class Trip,tt0156408
 1997,Western,tt0120494
-1996,Crash,tt0115964
+1996,Crash,tt0375679
 1995,Don't Forget You're Going to Die,tt0113909
-1995,Carrington,tt0112637
+1995,Christopher Hampton,tt0112637
 1994,La Reine Margot,tt0110963
 1993,The Puppetmaster,tt0107157
-1993,Raining Stones,tt0107920
+1993,Ken Loach,tt3387326
 1992,Dream of Light,tt0105438
 1992,An Independent Life,tt0105309
 1991,Europa,tt0101829
@@ -51,7 +48,6 @@ year,title,IMDb ID
 1989,Jesus of Montreal,tt0097635
 1988,A Short Film About Killing,tt0095468
 1987,Shinran: Path to Purity,tt0170569
-1987,Yeelen,tt0094349
 1986,Thérèse,tt0092090
 1985,Colonel Redl,tt0089716
 1983,Kharij,tt0084198
@@ -63,8 +59,6 @@ year,title,IMDb ID
 1971,Joe Hill,tt0067276
 1971,Love,tt0067814
 1970,The Falcons,tt0066035
-1970,The Strawberry Statement,tt0066415
-1969,Costa-Gavras,tt0065234
 1966,Alfie,tt0060086
 1965,Kwaidan,tt0058279
 1964,Woman in the Dunes,tt0058625
@@ -73,7 +67,7 @@ year,title,IMDb ID
 1962,L'Eclisse,tt0056736
 1962,The Trial of Joan of Arc,tt0059616
 1961,Mother Joan of the Angels,tt0055153
-1960,L'Avventura,tt0053619
+1960,L'Avventura,tt0053580
 1960,Odd Obsession,tt0052957
 1959,Stars,tt0053306
 1958,Mon Oncle,tt0050706

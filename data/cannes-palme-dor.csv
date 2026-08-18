@@ -1,9 +1,9 @@
 year,title,IMDb ID
 2026,Fjord,tt35410859
 2025,It Was Just an Accident,tt36491653
-2024,Anora,tt28607951
+2024,Anora,tt28329624
 2023,Anatomy of a Fall,tt17009710
-2022,Triangle of Sadness,tt7322224
+2022,Triangle of Sadness,tt10279050
 2021,Titane,tt10944760
 2019,Parasite,tt6751668
 2018,Shoplifters,tt8075192
@@ -34,7 +34,7 @@ year,title,IMDb ID
 1995,Underground,tt0114787
 1994,Pulp Fiction,tt0110912
 1993,Farewell My Concubine,tt0106332
-1993,The Piano,tt0107822
+1993,Jane Campion,tt2103085
 1992,The Best Intentions,tt0104350
 1991,Barton Fink,tt0101410
 1990,Wild at Heart,tt0100935
@@ -46,7 +46,6 @@ year,title,IMDb ID
 1984,"Paris, Texas",tt0087884
 1983,The Ballad of Narayama,tt0084390
 1982,Missing,tt0084335
-1982,Yol,tt0084934
 1981,Man of Iron,tt0082222
 1980,All That Jazz,tt0078754
 1980,Kagemusha,tt0080979
@@ -58,13 +57,12 @@ year,title,IMDb ID
 1975,Chronicle of the Years of Fire,tt0072782
 1974,The Conversation,tt0071360
 1973,The Hireling,tt0070180
-1973,Scarecrow,tt0070643
+1973,Jerry Schatzberg,tt2706678
 1972,The Mattei Affair,tt0068346
 1972,The Working Class Goes to Heaven,tt0066919
 1971,The Go-Between,tt0067144
 1970,M*A*S*H,tt0066026
 1969,If....,tt0063850
-1968,May 68,tt1172188
 1967,Blowup,tt0060176
 1966,"The Birds, the Bees and the Italians",tt0062271
 1966,A Man and a Woman,tt0061138
@@ -73,7 +71,6 @@ year,title,IMDb ID
 1963,The Leopard,tt0057091
 1962,O Pagador de Promessas,tt0056322
 1961,The Long Absence,tt0054426
-1961,Viridiana,tt0055601
 1960,La dolce vita,tt0053779
 1959,Black Orpheus,tt0053146
 1958,The Cranes Are Flying,tt0050634
@@ -88,19 +85,13 @@ year,title,IMDb ID
 1951,Miss Julie,tt0043567
 1949,The Third Man,tt0041959
 1947,Antoine and Antoinette,tt0039155
-1947,Crossfire,tt0039286
-1947,Dumbo,tt0033563
 1947,The Damned,tt0039615
-1947,Ziegfeld Follies,tt0039116
 1946,Brief Encounter,tt0037558
 1946,The Last Chance,tt0037871
-1946,The Lost Weekend,tt0037884
-1946,María Candelaria,tt0037054
 1946,Men Without Wings,tt0038760
-1946,Neecha Nagar,tt0154942
 1946,Pastoral Symphony,tt0039004
 1946,The Red Meadows,tt0038043
-1946,"Rome, Open City",tt0038890
+1946,"Rome, Open City",tt0038057
 1946,Torment,tt0036914
 1946,The Turning Point,tt0037426
-1939,outbreak of the Second World War,tt0088380
+1939,Union Pacific,tt0032080
