@@ -122,19 +122,19 @@ This addon features **Deterministic Daily Randomization**:
 ## Configuration & Installation
 
 ### Configuration Page
-Visit `/configure` on your deployed addon to customize which catalogs appear in your Stremio Discover menu:
+Visit `/configure` on the deployed addon to customize which catalogs appear in your Stremio Discover menu:
 ```text
-https://<your-subdomain>.elfhosted.com/configure
+https://stremio-film-festivals.elfhosted.com/configure
 ```
 
 ### In Stremio
 Enter the manifest URL in the Addon search box in Stremio:
 ```text
-https://<your-subdomain>.elfhosted.com/manifest.json
+https://stremio-film-festivals.elfhosted.com/manifest.json
 ```
 Or for filtered catalogs:
 ```text
-https://<your-subdomain>.elfhosted.com/manifest.json?festivals=cannes-palme-dor,venice-golden-lion,berlin-golden-bear
+https://stremio-film-festivals.elfhosted.com/manifest.json?festivals=cannes-palme-dor,venice-golden-lion,berlin-golden-bear
 ```
 
 ---
