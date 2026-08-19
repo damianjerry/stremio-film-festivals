@@ -570,13 +570,39 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			user-select: all;
 		}
 
-		.install-tip {
-			font-size: 0.82rem;
-			color: var(--text-muted);
-			line-height: 1.4;
+		.install-guide {
+			background: rgba(142, 68, 173, 0.08);
+			border: 1px solid rgba(142, 68, 173, 0.25);
+			border-radius: 8px;
+			padding: 14px 18px;
+			text-align: left;
+			margin-top: 4px;
 		}
 
-		.install-tip strong {
+		.install-guide h4 {
+			font-size: 0.92rem;
+			color: var(--accent-hover);
+			margin-bottom: 8px;
+			font-weight: 700;
+		}
+
+		.install-guide ol {
+			padding-left: 20px;
+			font-size: 0.85rem;
+			color: var(--text-muted);
+			line-height: 1.6;
+		}
+
+		.install-guide strong {
+			color: var(--text-main);
+		}
+
+		kbd {
+			background: var(--bg-card);
+			border: 1px solid var(--border);
+			border-radius: 4px;
+			padding: 2px 6px;
+			font-size: 0.8rem;
 			color: var(--text-main);
 		}
 
@@ -629,14 +655,22 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 		<div class="action-footer">
 			<div class="actions-row">
 				<a id="btn-install" href="#" class="btn-primary">
-					<span>Install in Stremio</span>
+					<span>Install in Stremio (1-Click)</span>
 				</a>
 				<button class="btn-secondary" onclick="copyManifestURL()">
-					Copy Manifest URL
+					📋 Copy Manifest URL
 				</button>
 			</div>
-			<div id="manifest-url-display" class="url-display"></div>
-			<p class="install-tip">💡 <strong>Tip:</strong> If clicking <strong>Install in Stremio</strong> does not automatically open Stremio Desktop, copy the Manifest URL above and paste it directly into the search bar under Stremio's <strong>Addons</strong> menu.</p>
+			<div id="manifest-url-display" class="url-display" onclick="copyManifestURL()" title="Click to copy"></div>
+			<div class="install-guide">
+				<h4>How to install in Stremio Desktop (Local / HTTP):</h4>
+				<ol>
+					<li>Click <strong>Copy Manifest URL</strong> above.</li>
+					<li>Open <strong>Stremio Desktop</strong> &rarr; Click the <strong>Addons (puzzle piece)</strong> icon on the left.</li>
+					<li>Paste the copied URL into the <strong>Search Addons</strong> bar at the top and press <kbd>Enter</kbd>.</li>
+					<li>Click the purple <strong>Install</strong> button on the <em>Film Festivals 2</em> card.</li>
+				</ol>
+			</div>
 		</div>
 	</div>
 
