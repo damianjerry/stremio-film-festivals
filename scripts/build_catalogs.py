@@ -5,9 +5,10 @@ Extracts verified festival winner lists from Wikipedia / Wikidata / Cinemeta,
 enforcing multi-signal verification:
   1. Strict decade/winner table selection (ignoring multiple-winners, statistics, and career tables)
   2. Film link isolation (extracting film titles from italic tags or designated film columns, never actor/director biographies)
-  3. Canonical classic dictionary + Wikidata P345 property matching
-  4. Multi-signal Cinemeta validation (title similarity >= 75%, year tolerance <= 2 years, type == movie)
-  5. Rejection of unverified/ambiguous search fallbacks
+  3. Proper continuation-row handling for tied winners with rowspan Year cells
+  4. Canonical classic dictionary + Wikidata P345 property matching
+  5. Multi-signal Cinemeta validation (title similarity >= 75%, year tolerance <= 2 years, type == movie)
+  6. Maximum year filter (<= 2025) to reject speculative / future entries
 """
 
 import os
@@ -191,6 +192,8 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "The Master": "tt1560747",
     "What Time Is It?": "tt0097048",
     "House of Games": "tt0093223",
+    "Scarecrow": "tt0070643",
+    "Stars at Noon": "tt10354106",
     "Gloria": "tt0080798",
     "The Man in the White Suit": "tt0044876",
     "Repulsion": "tt0059646",
@@ -208,6 +211,11 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "Aimée & Jaguar": "tt0130444",
     "Sachs' Disease": "tt0206124",
     "La maladie de Sachs": "tt0206124",
+    "Emilia Pérez": "tt20221436",
+    "Kinds of Kindness": "tt22408160",
+    "The Zone of Interest": "tt7160372",
+    "All We Imagine as Light": "tt27823528",
+    "Linha de Passe": "tt1047833",
 }
 
 def http_get_json(url, params=None, delay=0.05):
@@ -329,9 +337,9 @@ def resolve_imdb_id_strict(wiki_title, display_title="", year=None):
 
     return None
 
-def extract_award_films_from_tables(soup, title_col_hint='film_col', min_year=1920):
+def extract_award_films_robust(soup, min_year=1920, max_year=2025):
     entries = []
-    tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c)
+    tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c and 'navbox' not in c)
 
     for table in tables:
         prev_heading = table.find_previous(['h2', 'h3', 'h4'])
@@ -341,7 +349,7 @@ def extract_award_films_from_tables(soup, title_col_hint='film_col', min_year=19
                 'lifetime', 'honorary', 'honour', 'multiple', 'records', 'superlatives',
                 'statistics', 'directors with', 'actors with', 'actresses with',
                 'winners of multiple', 'festival director', 'jury president', 'see also',
-                'retrospective', 'other awards'
+                'retrospective', 'other awards', 'notes', 'references', 'external links'
             ]):
                 continue
 
@@ -364,15 +372,19 @@ def extract_award_films_from_tables(soup, title_col_hint='film_col', min_year=19
 
             first_text = cells[0].get_text(strip=True)
             year_match = re.search(r'\b(19\d\d|20\d\d)\b', first_text)
-            if year_match and len(first_text) <= 14:
-                current_year = int(year_match.group(1))
-                row_cells = cells[1:]
-                offset = 1
-            else:
-                row_cells = cells
-                offset = 0
 
-            if not current_year or current_year < min_year:
+            if year_match and len(first_text) <= 14:
+                yr = int(year_match.group(1))
+                if yr > max_year or yr < min_year:
+                    continue
+                current_year = yr
+                has_year_col = True
+                row_cells = cells[1:]
+            else:
+                has_year_col = False
+                row_cells = cells
+
+            if not current_year or current_year < min_year or current_year > max_year:
                 continue
 
             row_text = tr.get_text(strip=True)
@@ -380,15 +392,20 @@ def extract_award_films_from_tables(soup, title_col_hint='film_col', min_year=19
                 continue
 
             chosen_a = None
-            if film_col_idx != -1:
-                target_cell_idx = film_col_idx - offset
-                if 0 <= target_cell_idx < len(row_cells):
-                    target_cell = row_cells[target_cell_idx]
-                    italic = target_cell.find(['i', 'em'])
-                    if italic:
-                        chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
-                    if not chosen_a:
-                        chosen_a = target_cell.find('a')
+            target_cell = None
+            if has_year_col and film_col_idx != -1:
+                target_idx = film_col_idx - 1
+                if 0 <= target_idx < len(row_cells):
+                    target_cell = row_cells[target_idx]
+            elif not has_year_col and len(row_cells) > 0:
+                target_cell = row_cells[0]
+
+            if target_cell:
+                italic = target_cell.find(['i', 'em'])
+                if italic:
+                    chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
+                if not chosen_a:
+                    chosen_a = target_cell.find('a')
 
             if not chosen_a:
                 for cell in row_cells:
@@ -399,15 +416,88 @@ def extract_award_films_from_tables(soup, title_col_hint='film_col', min_year=19
                             chosen_a = a
                             break
 
+            if chosen_a:
+                href = chosen_a.get('href', '').replace('/wiki/', '')
+                title = clean_title(chosen_a.get_text(strip=True) or chosen_a.get('title', ''))
+                if href and title and len(title) > 1 and not is_note_or_cancellation(title):
+                    entries.append((current_year, title, href))
+
+    return entries
+
+def parse_acting_films(soup, min_year=1920, max_year=2025):
+    entries = []
+    tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c and 'navbox' not in c)
+    for table in tables:
+        prev_h = table.find_previous(['h2', 'h3', 'h4'])
+        if prev_h:
+            p_txt = prev_h.get_text().lower()
+            if any(skip in p_txt for skip in ['multiple', 'superlatives', 'records', 'statistics', 'see also', 'references', 'external links', 'notes']):
+                continue
+
+        headers = []
+        h_row = table.find('tr')
+        if h_row:
+            headers = [th.get_text(strip=True).lower() for th in h_row.find_all(['th', 'td'])]
+
+        film_col_idx = -1
+        for idx, h in enumerate(headers):
+            if any(k in h for k in ['film', 'english title', 'title', 'película', 'titolo', 'obra']) and not any(bad in h for bad in ['actor', 'actress', 'recipient', 'role', 'character']):
+                film_col_idx = idx
+                break
+
+        current_year = None
+        for tr in table.find_all('tr')[1:]:
+            cells = tr.find_all(['th', 'td'])
+            if not cells:
+                continue
+
+            first_text = cells[0].get_text(strip=True)
+            year_match = re.search(r'\b(19\d\d|20\d\d)\b', first_text)
+
+            if year_match and len(first_text) <= 14:
+                yr = int(year_match.group(1))
+                if yr > max_year or yr < min_year:
+                    continue
+                current_year = yr
+                has_year_col = True
+                row_cells = cells[1:]
+            else:
+                has_year_col = False
+                row_cells = cells
+
+            if not current_year or current_year < min_year or current_year > max_year:
+                continue
+
+            row_txt = tr.get_text(strip=True).lower()
+            if is_note_or_cancellation(row_txt):
+                continue
+
+            chosen_a = None
+            if has_year_col and film_col_idx != -1:
+                target_idx = film_col_idx - 1
+                if 0 <= target_idx < len(row_cells):
+                    target_cell = row_cells[target_idx]
+                    italic = target_cell.find(['i', 'em'])
+                    if italic:
+                        chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
+                    if not chosen_a:
+                        chosen_a = target_cell.find('a')
+            elif not has_year_col and len(row_cells) > 0:
+                target_cell = row_cells[0] if film_col_idx == -1 or len(row_cells) == 1 else row_cells[min(1, len(row_cells)-1)]
+                italic = target_cell.find(['i', 'em'])
+                if italic:
+                    chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
+                if not chosen_a:
+                    chosen_a = target_cell.find('a')
+
             if not chosen_a:
                 for cell in row_cells:
-                    for a in cell.find_all('a'):
-                        href = a.get('href', '')
-                        if href.startswith('/wiki/') and not any(x in href for x in ['File:', 'Help:', 'Category:', 'Wikipedia:', 'cite_note', 'Festival', 'festival', 'List_of', 'Special:', 'Ref.', 'awards', 'Academy_Award']):
+                    italic = cell.find(['i', 'em'])
+                    if italic:
+                        a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
+                        if a and a.get('href', '').startswith('/wiki/'):
                             chosen_a = a
                             break
-                    if chosen_a:
-                        break
 
             if chosen_a:
                 href = chosen_a.get('href', '').replace('/wiki/', '')
@@ -417,7 +507,7 @@ def extract_award_films_from_tables(soup, title_col_hint='film_col', min_year=19
 
     return entries
 
-def parse_tiff_peoples_choice(soup, min_year=1978):
+def parse_tiff_peoples_choice(soup, min_year=1978, max_year=2025):
     entries = []
     tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c)
     for t in tables:
@@ -429,7 +519,7 @@ def parse_tiff_peoples_choice(soup, min_year=1978):
             if not yr_match:
                 continue
             yr = int(yr_match.group(1))
-            if yr < min_year:
+            if yr < min_year or yr > max_year:
                 continue
 
             film_cell = cells[1]
@@ -447,7 +537,7 @@ def parse_tiff_peoples_choice(soup, min_year=1978):
                     entries.append((yr, title, href))
     return entries
 
-def parse_academy_awards_best_picture(soup, min_year=1927):
+def parse_academy_awards_best_picture(soup, min_year=1927, max_year=2025):
     entries = []
     tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c)
     for t in tables:
@@ -462,7 +552,7 @@ def parse_academy_awards_best_picture(soup, min_year=1927):
                 if not yr_match:
                     continue
                 yr = int(yr_match.group(1))
-                if yr < min_year:
+                if yr < min_year or yr > max_year:
                     continue
                 film_td = tds[0]
                 film_a = film_td.find('a')
@@ -473,7 +563,7 @@ def parse_academy_awards_best_picture(soup, min_year=1927):
                         entries.append((yr, title, href))
     return entries
 
-def parse_sundance_category_strict(soup, pattern, neg_pattern=None, min_year=1984):
+def parse_sundance_category_strict(soup, pattern, neg_pattern=None, min_year=1984, max_year=2025):
     results = []
     seen_years = set()
     for h in soup.find_all(['h3', 'h4', 'div']):
@@ -482,7 +572,7 @@ def parse_sundance_category_strict(soup, pattern, neg_pattern=None, min_year=198
         if not m:
             continue
         year = int(m.group(1))
-        if year in seen_years or year < min_year:
+        if year in seen_years or year < min_year or year > max_year:
             continue
 
         next_ul = h.find_next_sibling('ul')
@@ -519,7 +609,7 @@ def parse_sundance_category_strict(soup, pattern, neg_pattern=None, min_year=198
                     break
     return results
 
-def parse_rotterdam_tiger(soup, min_year=1995):
+def parse_rotterdam_tiger(soup, min_year=1995, max_year=2025):
     entries = []
     tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c)
     for t in tables:
@@ -538,7 +628,7 @@ def parse_rotterdam_tiger(soup, min_year=1995):
                 else:
                     row_cells = all_cells
 
-                if not current_year or current_year < min_year:
+                if not current_year or current_year < min_year or current_year > max_year:
                     continue
 
                 for cell in row_cells[:2]:
@@ -553,7 +643,7 @@ def parse_rotterdam_tiger(soup, min_year=1995):
                         break
     return entries
 
-def parse_bfi_london_best_film(soup, min_year=1958):
+def parse_bfi_london_best_film(soup, min_year=1958, max_year=2025):
     entries = []
     tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c)
     for t in tables:
@@ -573,6 +663,8 @@ def parse_bfi_london_best_film(soup, min_year=1958):
             if not year_match:
                 continue
             yr = int(year_match.group(1))
+            if yr > max_year:
+                continue
 
             chosen_a = None
             for cell in tds:
@@ -589,7 +681,7 @@ def parse_bfi_london_best_film(soup, min_year=1958):
                     entries.append((yr, cleaned, chosen_a.get('href', '').replace('/wiki/', '')))
     return entries
 
-def parse_idfa_best_film(soup, min_year=1988):
+def parse_idfa_best_film(soup, min_year=1988, max_year=2025):
     entries = []
     tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c)
     if tables:
@@ -607,7 +699,7 @@ def parse_idfa_best_film(soup, min_year=1988):
             else:
                 row_cells = all_cells
 
-            if not current_year or current_year < min_year:
+            if not current_year or current_year < min_year or current_year > max_year:
                 continue
 
             for cell in row_cells[:1]:
@@ -620,14 +712,14 @@ def parse_idfa_best_film(soup, min_year=1988):
                             break
     return entries
 
-def parse_fipresci_grand_prix(soup, min_year=1999):
+def parse_fipresci_grand_prix(soup, min_year=1999, max_year=2025):
     entries = []
     for li in soup.find_all('li'):
         text = li.get_text(strip=True)
         m = re.match(r'^(19\d\d|20\d\d)\s*[–\-—]\s*(.+)', text)
         if m:
             yr = int(m.group(1))
-            if yr < min_year:
+            if yr < min_year or yr > max_year:
                 continue
             for a in li.find_all('a'):
                 href = a.get('href', '')
@@ -708,9 +800,9 @@ def process_catalog(catalog_id, wiki_page, hint='film_col', min_year=1920, legac
 
     soup = BeautifulSoup(html, 'html.parser')
     if custom_parser:
-        raw_entries = custom_parser(soup, min_year)
+        raw_entries = custom_parser(soup, min_year=min_year)
     else:
-        raw_entries = extract_award_films_from_tables(soup, title_col_hint=hint, min_year=min_year)
+        raw_entries = extract_award_films_robust(soup, min_year=min_year)
 
     if catalog_id == 'cannes-palme-dor':
         raw_entries.append((1939, 'Union Pacific', 'Union_Pacific_(film)'))
@@ -740,24 +832,24 @@ def main():
     process_catalog('cannes-jury-prize', 'Jury Prize (Cannes Film Festival)')
     process_catalog('cannes-best-director', 'Cannes Film Festival Award for Best Director')
     process_catalog('cannes-best-screenplay', 'Cannes Film Festival Award for Best Screenplay')
-    process_catalog('cannes-best-actress', 'Cannes Film Festival Award for Best Actress')
-    process_catalog('cannes-best-actor', 'Cannes Film Festival Award for Best Actor')
+    process_catalog('cannes-best-actress', 'Cannes Film Festival Award for Best Actress', custom_parser=parse_acting_films)
+    process_catalog('cannes-best-actor', 'Cannes Film Festival Award for Best Actor', custom_parser=parse_acting_films)
 
     # 2. VENICE (6 catalogs)
     process_catalog('venice-golden-lion', 'Golden Lion', legacy_file='golden-lion-winners.csv')
     process_catalog('venice-grand-jury-prize', 'Grand Jury Prize (Venice Film Festival)')
     process_catalog('venice-silver-lion-director', 'Silver Lion')
     process_catalog('venice-best-screenplay', 'Golden Osella')
-    process_catalog('venice-coppa-volpi-actress', 'Volpi Cup for Best Actress')
-    process_catalog('venice-coppa-volpi-actor', 'Volpi Cup for Best Actor')
+    process_catalog('venice-coppa-volpi-actress', 'Volpi Cup for Best Actress', custom_parser=parse_acting_films)
+    process_catalog('venice-coppa-volpi-actor', 'Volpi Cup for Best Actor', custom_parser=parse_acting_films)
 
     # 3. BERLIN (6 catalogs)
     process_catalog('berlin-golden-bear', 'Golden Bear', legacy_file='golden-bear-winners.csv')
     process_catalog('berlin-silver-bear-grand-jury', 'Silver Bear Grand Jury Prize')
     process_catalog('berlin-silver-bear-director', 'Silver Bear for Best Director')
     process_catalog('berlin-silver-bear-screenplay', 'Silver Bear for Best Screenplay')
-    process_catalog('berlin-silver-bear-actress', 'Silver Bear for Best Actress')
-    process_catalog('berlin-silver-bear-actor', 'Silver Bear for Best Actor')
+    process_catalog('berlin-silver-bear-actress', 'Silver Bear for Best Actress', custom_parser=parse_acting_films)
+    process_catalog('berlin-silver-bear-actor', 'Silver Bear for Best Actor', custom_parser=parse_acting_films)
 
     # 4. LOCARNO (3 catalogs)
     process_catalog('locarno-golden-leopard', 'Golden Leopard')
@@ -766,17 +858,17 @@ def main():
 
     # 5. SUNDANCE (6 catalogs)
     process_catalog('sundance-grand-jury-dramatic', 'List of Sundance Film Festival award winners',
-                    custom_parser=lambda soup, yr: parse_sundance_category_strict(soup, r'Grand Jury.*Dramatic', neg_pattern=r'Documentary|World', min_year=yr))
+                    custom_parser=lambda soup, min_year: parse_sundance_category_strict(soup, r'Grand Jury.*Dramatic', neg_pattern=r'Documentary|World', min_year=min_year))
     process_catalog('sundance-grand-jury-doc', 'List of Sundance Film Festival award winners',
-                    custom_parser=lambda soup, yr: parse_sundance_category_strict(soup, r'Grand Jury.*Doc', neg_pattern=r'Dramatic|World', min_year=yr))
+                    custom_parser=lambda soup, min_year: parse_sundance_category_strict(soup, r'Grand Jury.*Doc', neg_pattern=r'Dramatic|World', min_year=min_year))
     process_catalog('sundance-audience-dramatic', 'List of Sundance Film Festival award winners',
-                    custom_parser=lambda soup, yr: parse_sundance_category_strict(soup, r'Audience.*Dramatic', neg_pattern=r'Documentary|World', min_year=yr))
+                    custom_parser=lambda soup, min_year: parse_sundance_category_strict(soup, r'Audience.*Dramatic', neg_pattern=r'Documentary|World', min_year=min_year))
     process_catalog('sundance-audience-doc', 'List of Sundance Film Festival award winners',
-                    custom_parser=lambda soup, yr: parse_sundance_category_strict(soup, r'Audience.*Doc', neg_pattern=r'Dramatic|World', min_year=yr))
+                    custom_parser=lambda soup, min_year: parse_sundance_category_strict(soup, r'Audience.*Doc', neg_pattern=r'Dramatic|World', min_year=min_year))
     process_catalog('sundance-directing-dramatic', 'List of Sundance Film Festival award winners',
-                    custom_parser=lambda soup, yr: parse_sundance_category_strict(soup, r'Directing.*Dramatic', neg_pattern=r'Documentary|World', min_year=yr))
+                    custom_parser=lambda soup, min_year: parse_sundance_category_strict(soup, r'Directing.*Dramatic', neg_pattern=r'Documentary|World', min_year=min_year))
     process_catalog('sundance-directing-doc', 'List of Sundance Film Festival award winners',
-                    custom_parser=lambda soup, yr: parse_sundance_category_strict(soup, r'Directing.*Doc', neg_pattern=r'Dramatic|World', min_year=yr))
+                    custom_parser=lambda soup, min_year: parse_sundance_category_strict(soup, r'Directing.*Doc', neg_pattern=r'Dramatic|World', min_year=min_year))
 
     # 6. TORONTO TIFF (1 catalog)
     process_catalog('tiff-peoples-choice', 'Toronto International Film Festival People\'s Choice Award', custom_parser=parse_tiff_peoples_choice)
