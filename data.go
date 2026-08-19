@@ -8,11 +8,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/deflix-tv/go-stremio"
 	"go.uber.org/zap"
 )
+
+var imdbIDSanitizer = regexp.MustCompile(`[^a-zA-Z0-9]`)
 
 // FilmRecord represents a single verified festival winning film entry.
 type FilmRecord struct {
@@ -116,7 +119,7 @@ func readCatalogCSV(filePath string) ([]FilmRecord, error) {
 	header := rows[0]
 	yearIdx, titleIdx, imdbIdx := -1, -1, -1
 	for i, col := range header {
-		cleanCol := strings.TrimSpace(strings.ToLower(col))
+		cleanCol := strings.Trim(strings.ToLower(col), " \r\n\t")
 		switch cleanCol {
 		case "year":
 			yearIdx = i
@@ -136,14 +139,19 @@ func readCatalogCSV(filePath string) ([]FilmRecord, error) {
 		if len(row) <= yearIdx || len(row) <= titleIdx || len(row) <= imdbIdx {
 			continue
 		}
-		imdbID := strings.TrimSpace(row[imdbIdx])
-		if imdbID == "" || !strings.HasPrefix(imdbID, "tt") {
+		rawIMDb := strings.Trim(row[imdbIdx], " \r\n\t")
+		cleanIMDb := imdbIDSanitizer.ReplaceAllString(rawIMDb, "")
+		if cleanIMDb == "" || !strings.HasPrefix(cleanIMDb, "tt") {
 			continue
 		}
+
+		cleanYear := strings.Trim(row[yearIdx], " \r\n\t")
+		cleanTitle := strings.Trim(row[titleIdx], " \r\n\t")
+
 		records = append(records, FilmRecord{
-			Year:   strings.TrimSpace(row[yearIdx]),
-			Title:  strings.TrimSpace(row[titleIdx]),
-			IMDbID: imdbID,
+			Year:   cleanYear,
+			Title:  cleanTitle,
+			IMDbID: cleanIMDb,
 		})
 	}
 
@@ -158,6 +166,7 @@ func buildMetaPreviewItems(records []FilmRecord, metasDir string, logger *zap.Lo
 		if metaBytes, err := ioutil.ReadFile(metaFile); err == nil {
 			var item stremio.MetaPreviewItem
 			if err := json.Unmarshal(metaBytes, &item); err == nil && item.ID != "" {
+				item.ID = imdbIDSanitizer.ReplaceAllString(strings.Trim(item.ID, " \r\n\t"), "")
 				if item.Name == "" {
 					item.Name = rec.Title
 				}

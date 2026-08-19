@@ -143,7 +143,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "CODA": "tt10366460",
     "Everything Everywhere All at Once": "tt6710474",
     "Oppenheimer": "tt15398776",
-    "Anora": "tt28329624",
+    "Anora": "tt28607951",
     "Vertigo": "tt0052357",
     "North by Northwest": "tt0053125",
     "Seven Samurai": "tt0047478",
@@ -182,7 +182,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "Winter Sleep": "tt2758880",
     "The Square": "tt4995790",
     "Shoplifters": "tt8075192",
-    "Triangle of Sadness": "tt10279050",
+    "Triangle of Sadness": "tt7322224",
     "Anatomy of a Fall": "tt17009710",
     "Larks on a String": "tt0064994",
     "Commissar": "tt0061876",
@@ -215,7 +215,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "Kinds of Kindness": "tt22408160",
     "The Zone of Interest": "tt7160372",
     "All We Imagine as Light": "tt27823528",
-    "Linha de Passe": "tt1047833",
+    "Linha de Passe": "tt0803029",
 }
 
 def http_get_json(url, params=None, delay=0.05):
@@ -773,7 +773,7 @@ def write_catalog_csv(catalog_id, records, legacy_filename=None):
             unique_records.append(rec)
 
     with open(file_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator='\n')
         writer.writerow(["year", "title", "IMDb ID"])
         for r in unique_records:
             writer.writerow([r[0], r[1], r[2]])
@@ -783,7 +783,7 @@ def write_catalog_csv(catalog_id, records, legacy_filename=None):
     if legacy_filename:
         legacy_path = os.path.join(DATA_DIR, legacy_filename)
         with open(legacy_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
+            writer = csv.writer(f, lineterminator='\n')
             writer.writerow(["year", "title", "IMDb ID"])
             for r in unique_records:
                 writer.writerow([r[0], r[1], r[2]])

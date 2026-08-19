@@ -164,8 +164,12 @@ func TestRegressionCanonicalLandmarkMappings(t *testing.T) {
 		"cannes-palme-dor:1979":           "tt0078788", // Apocalypse Now
 		"cannes-palme-dor:1994":           "tt0110912", // Pulp Fiction
 		"cannes-palme-dor:2019":           "tt6751668", // Parasite
+		"cannes-palme-dor:2022":           "tt7322224", // Triangle of Sadness
 		"cannes-palme-dor:2023":           "tt17009710",// Anatomy of a Fall
-		"cannes-palme-dor:2024":           "tt28329624",// Anora
+		"cannes-palme-dor:2024":           "tt28607951",// Anora
+		"cannes-palme-dor:1973":           "tt0070643", // Scarecrow
+		"cannes-grand-prix:2022":          "tt10354106",// Stars at Noon
+		"cannes-best-actress:2008":        "tt0803029", // Linha de Passe
 	}
 
 	for key, expectedID := range landmarkMap {
@@ -189,16 +193,15 @@ func TestRegressionCanonicalLandmarkMappings(t *testing.T) {
 		found := false
 		for _, row := range rows[1:] {
 			if strings.TrimSpace(row[0]) == targetYear {
-				found = true
-				if strings.TrimSpace(row[2]) != expectedID {
-					t.Fatalf("Landmark mapping error in %s for year %s: expected %s, got %s (%s)", catalogID, targetYear, expectedID, row[2], row[1])
+				if strings.TrimSpace(row[2]) == expectedID {
+					found = true
+					break
 				}
-				break
 			}
 		}
 
 		if !found {
-			t.Fatalf("Landmark entry %s for year %s not found in %s", key, targetYear, csvPath)
+			t.Fatalf("Landmark entry %s (expected ID %s) not found among records for year %s in %s", key, expectedID, targetYear, csvPath)
 		}
 	}
 }

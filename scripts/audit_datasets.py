@@ -129,7 +129,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "CODA": "tt10366460",
     "Everything Everywhere All at Once": "tt6710474",
     "Oppenheimer": "tt15398776",
-    "Anora": "tt28329624",
+    "Anora": "tt28607951",
     "Vertigo": "tt0052357",
     "North by Northwest": "tt0053125",
     "Seven Samurai": "tt0047478",
@@ -168,7 +168,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "Winter Sleep": "tt2758880",
     "The Square": "tt4995790",
     "Shoplifters": "tt8075192",
-    "Triangle of Sadness": "tt10279050",
+    "Triangle of Sadness": "tt7322224",
     "Anatomy of a Fall": "tt17009710",
     "Larks on a String": "tt0064994",
     "Commissar": "tt0061876",
@@ -178,6 +178,8 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "The Master": "tt1560747",
     "What Time Is It?": "tt0097048",
     "House of Games": "tt0093223",
+    "Scarecrow": "tt0070643",
+    "Stars at Noon": "tt10354106",
     "Gloria": "tt0080798",
     "The Man in the White Suit": "tt0044876",
     "Repulsion": "tt0059646",
@@ -195,6 +197,11 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "Aimée & Jaguar": "tt0130444",
     "Sachs' Disease": "tt0206124",
     "La maladie de Sachs": "tt0206124",
+    "Emilia Pérez": "tt20221436",
+    "Kinds of Kindness": "tt22408160",
+    "The Zone of Interest": "tt7160372",
+    "All We Imagine as Light": "tt27823528",
+    "Linha de Passe": "tt0803029",
 }
 
 def clean_title_str(t):
