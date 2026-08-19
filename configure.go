@@ -606,33 +606,42 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			color: var(--text-main);
 		}
 
-		.brand-links {
+		.sponsor-content {
+			background: var(--bg-surface);
+			border: 1px solid rgba(142, 68, 173, 0.35);
+			border-radius: var(--radius);
+			padding: 16px 20px;
 			display: flex;
 			align-items: center;
-			justify-content: center;
-			gap: 12px;
-			margin-top: 12px;
-			font-size: 0.9rem;
+			gap: 16px;
+			text-align: left;
+			margin: 18px auto 0 auto;
+			max-width: 680px;
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 		}
 
-		.brand-link {
+		.sponsor-logo {
+			width: 64px;
+			height: 64px;
+			flex-shrink: 0;
+		}
+
+		.sponsor-text {
+			font-size: 0.88rem;
+			color: var(--text-main);
+			line-height: 1.5;
+		}
+
+		.sponsor-text a {
 			color: #bb86fc;
 			text-decoration: none;
 			font-weight: 600;
-			display: inline-flex;
-			align-items: center;
-			gap: 4px;
 			transition: color 0.2s ease;
 		}
 
-		.brand-link:hover {
+		.sponsor-text a:hover {
 			color: #ffffff;
 			text-decoration: underline;
-		}
-
-		.dot-separator {
-			color: var(--text-muted);
-			font-size: 0.8rem;
 		}
 
 		.toast {
@@ -665,15 +674,10 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			</div>
 			<h1>Film Festivals 2 | ElfHosted</h1>
 			<p class="subtitle">Customize your festival discovery catalogs in Stremio. Discover award-winning arthouse, auteur, and international festival cinema.</p>
-			<div class="brand-links">
-				<a href="https://elfhosted.com" target="_blank" rel="noopener" class="brand-link">
-					⚡ Hosted by <strong>ElfHosted</strong>
-				</a>
-				<span class="dot-separator">•</span>
-				<a href="https://github.com/damianjerry/stremio-film-festivals" target="_blank" rel="noopener" class="brand-link">
-					<svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-					GitHub Project
-				</a>
+			
+			<div class="sponsor-content flex items-start gap-4 text-left">
+				<img src="https://elfhosted.com/images/logo.svg" alt="ElfHosted Logo" class="sponsor-logo" width="64" height="64">
+				<p class="sponsor-text">This is the public instance of <a href="https://github.com/damianjerry/stremio-film-festivals" target="_blank" rel="noopener">Film Festivals 2</a>, sponsored by <a href="https://store.elfhosted.com/" target="_blank" rel="noopener">ElfHosted</a> ❤️<br><br>See our FREE <a href="https://stremio-addons-guide.elfhosted.com" target="_blank" rel="noopener">Stremio Addons Guide</a> for more great addons and features!</p>
 			</div>
 		</header>
 
