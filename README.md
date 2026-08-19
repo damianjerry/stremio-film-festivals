@@ -1,6 +1,18 @@
-# Film Festivals 2 | ElfHosted
+<p align="center">
+  <img src="film%20festivals%20logo.png" alt="Film Festivals 2 Logo" width="160" height="160" style="border-radius: 28px;">
+</p>
 
-A comprehensive Stremio addon for discovering arthouse, auteur, and award-winning international cinema across the world's most prestigious film festivals.
+# <p align="center">Film Festivals 2 | ElfHosted</p>
+
+<p align="center">
+  <em>A comprehensive Stremio addon for discovering arthouse, auteur, and award-winning international cinema across the world's most prestigious film festivals.</em>
+</p>
+
+<p align="center">
+  <a href="https://elfhosted.com"><img src="https://img.shields.io/badge/Hosted%20by-ElfHosted-blueviolet?style=flat-square" alt="ElfHosted"></a>
+  <a href="https://github.com/damianjerry/stremio-film-festivals"><img src="https://img.shields.io/badge/GitHub-Repository-blue?style=flat-square&logo=github" alt="GitHub"></a>
+  <a href="https://stremio-addons-guide.elfhosted.com"><img src="https://img.shields.io/badge/Stremio-Addons%20Guide-orange?style=flat-square" alt="Stremio Addons Guide"></a>
+</p>
 
 > [!TIP]
 > ⚡ **Hosted by [ElfHosted](https://elfhosted.com)** — High-performance open-source apps and Stremio addons in the cloud.  
