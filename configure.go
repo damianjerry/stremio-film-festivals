@@ -64,8 +64,8 @@ func BuildCustomManifest(selectedCatalogIDs []string, baseURL string) CustomMani
 
 	cm := CustomManifest{
 		ID:          "tv.deflix.stremio-film-festivals",
-		Name:        "Film Festivals 2",
-		Description: "Discover arthouse, auteur, and award-winning cinema from Cannes, Venice, Berlinale, Locarno, Sundance, TIFF, Rotterdam, San Sebastián, Karlovy Vary, BFI London, IDFA, SXSW, FIPRESCI & the Oscars.",
+		Name:        "Film Festivals 2 | ElfHosted",
+		Description: "Discover arthouse, auteur, and award-winning cinema from Cannes, Venice, Berlinale, Locarno, Sundance, TIFF, Rotterdam, San Sebastián, Karlovy Vary, BFI London, IDFA, SXSW, FIPRESCI & the Oscars. Hosted on ElfHosted.",
 		Version:     version,
 		ResourceItems: []stremio.ResourceItem{
 			{
@@ -248,7 +248,7 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Film Festivals 2 — Stremio Addon Configuration</title>
+	<title>Film Festivals 2 | ElfHosted — Stremio Addon Configuration</title>
 	<link rel="icon" type="image/png" href="/logo.png">
 	<style>
 		:root {
@@ -606,6 +606,35 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			color: var(--text-main);
 		}
 
+		.brand-links {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 12px;
+			margin-top: 12px;
+			font-size: 0.9rem;
+		}
+
+		.brand-link {
+			color: #bb86fc;
+			text-decoration: none;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			transition: color 0.2s ease;
+		}
+
+		.brand-link:hover {
+			color: #ffffff;
+			text-decoration: underline;
+		}
+
+		.dot-separator {
+			color: var(--text-muted);
+			font-size: 0.8rem;
+		}
+
 		.toast {
 			position: fixed;
 			bottom: 30px;
@@ -632,10 +661,20 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 	<div class="container">
 		<header>
 			<div class="logo-wrap">
-				<img src="/logo.png" alt="Film Festivals 2 Logo" class="logo">
+				<img src="/logo.png" alt="Film Festivals 2 | ElfHosted Logo" class="logo">
 			</div>
-			<h1>Film Festivals 2</h1>
-			<p class="subtitle">Customize your festival discovery catalogs in Stremio. Select the festival sections you want to appear in your Discover movies menu.</p>
+			<h1>Film Festivals 2 | ElfHosted</h1>
+			<p class="subtitle">Customize your festival discovery catalogs in Stremio. Discover award-winning arthouse, auteur, and international festival cinema.</p>
+			<div class="brand-links">
+				<a href="https://elfhosted.com" target="_blank" rel="noopener" class="brand-link">
+					⚡ Hosted by <strong>ElfHosted</strong>
+				</a>
+				<span class="dot-separator">•</span>
+				<a href="https://github.com/damianjerry/stremio-film-festivals" target="_blank" rel="noopener" class="brand-link">
+					<svg height="14" width="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+					GitHub Project
+				</a>
+			</div>
 		</header>
 
 		<div class="toolbar">

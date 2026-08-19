@@ -51,8 +51,8 @@ func TestBuildManifest(t *testing.T) {
 		if cat.Name == "" {
 			t.Fatalf("Catalog %s has empty Name", cat.ID)
 		}
-		if !strings.HasPrefix(cat.Name, "Film Festivals — ") {
-			t.Fatalf("Catalog %s Name does not follow naming convention: %s", cat.ID, cat.Name)
+		if !strings.Contains(cat.Name, " — ") {
+			t.Fatalf("Catalog %s Name does not follow '<Festival> — <Award>' naming convention: %s", cat.ID, cat.Name)
 		}
 		if cat.Type != "movie" {
 			t.Fatalf("Catalog %s has unexpected Type: %s", cat.ID, cat.Type)

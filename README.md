@@ -1,13 +1,18 @@
-# Film Festivals — Stremio Addon
+# Film Festivals 2 | ElfHosted
 
 A comprehensive Stremio addon for discovering arthouse, auteur, and award-winning international cinema across the world's most prestigious film festivals.
+
+> [!TIP]
+> ⚡ **Hosted by [ElfHosted](https://elfhosted.com)** — High-performance open-source apps and Stremio addons in the cloud.  
+> 🔗 **GitHub Repository**: [damianjerry/stremio-film-festivals](https://github.com/damianjerry/stremio-film-festivals)
 
 ---
 
 ## Features
 
-* **37+ Curated Catalogs**: Spanning the major international festival circuits, auteur showcases, and documentary awards.
+* **38 Curated Festival Catalogs**: Spanning the major international festival circuits, auteur showcases, and documentary awards.
 * **Deterministic Daily Discovery**: Each day, catalogs feature a deterministically randomized discovery ordering so users discover different hidden gems every day, while remaining stable throughout the day for seamless caching.
+* **Interactive Configuration UI (`/configure`)**: Select specific festival sections, choose presets (Big Three, Auteurs), and generate custom manifest links.
 * **Complete Historical Datasets**: Every winning feature film from inaugural editions to the present is preserved and browsable.
 * **IMDb & Cinemeta Native Integration**: Standard IMDb ID mapping (`tt...`) ensures posters, metadata, synopsis, trailers, and stream resolution work natively across Stremio Web, Desktop, Android, and TV apps.
 * **Zero External Dependencies at Runtime**: Fast in-memory catalog store with bundled data, instant cold starts, and resilience.
@@ -15,7 +20,7 @@ A comprehensive Stremio addon for discovering arthouse, auteur, and award-winnin
 
 ---
 
-## Festival & Award Catalogs
+## Festival & Award Catalogs (38 Catalogs)
 
 ### 🇫🇷 Cannes Film Festival
 * **Palme d'Or** (`cannes-palme-dor` / alias `palme-dor-winners`) — Highest prize of the Official Competition (1939–present).
@@ -102,16 +107,22 @@ This addon features **Deterministic Daily Randomization**:
 
 ---
 
-## Installation
+## Configuration & Installation
+
+### Configuration Page
+Visit `/configure` on your deployed addon to customize which catalogs appear in your Stremio Discover menu:
+```text
+https://<your-subdomain>.elfhosted.com/configure
+```
 
 ### In Stremio
 Enter the manifest URL in the Addon search box in Stremio:
 ```text
-https://stremio-film-festivals.deflix.tv/manifest.json
+https://<your-subdomain>.elfhosted.com/manifest.json
 ```
-Or for your self-hosted / ElfHosted deployment:
+Or for filtered catalogs:
 ```text
-https://<your-domain>/manifest.json
+https://<your-subdomain>.elfhosted.com/manifest.json?festivals=cannes-palme-dor,venice-golden-lion,berlin-golden-bear
 ```
 
 ---
@@ -153,42 +164,13 @@ All parameters can be configured via command-line flags or environment variables
 
 ---
 
-## Maintainability: Adding a New Festival
+## ElfHosted Deployment
 
-Adding a new festival or award category is straightforward and declarative:
-
-1. **Add the CSV dataset**:
-   Create a CSV file in `data/<festival-id>.csv` with header:
-   ```csv
-   year,title,IMDb ID
-   2024,Example Film,tt1234567
-   ```
-2. **Register the catalog in `config.go`**:
-   Add an entry to `FestivalCatalogs`:
-   ```go
-   {
-       ID:          "festival-award-name",
-       Name:        "Film Festivals — Festival — Award",
-       Festival:    "Festival Name",
-       Award:       "Award Name",
-       Description: "Description of the award",
-       CSVFile:     "festival-award-name.csv",
-   },
-   ```
-3. **Run tests**:
-   ```bash
-   go test ./...
-   ```
-   All tests will automatically validate the new CSV schema, check IMDb IDs, and verify manifest inclusion.
-
----
-
-## ElfHosted Deployment Notes
-
+* **Hosted on ElfHosted**: [https://elfhosted.com](https://elfhosted.com)
 * The container is built using a secure multi-stage build (`gcr.io/distroless/static:nonroot`) and runs as an unprivileged user (`nonroot:nonroot`).
-* Festival datasets are pre-packaged directly inside the container (`/data`), meaning no external volume mounting is strictly required for basic operation.
+* Festival datasets and branding logo are pre-packaged directly inside the container (`/data`), meaning no external volume mounting is strictly required for basic operation.
 * Standard healthcheck endpoint is available at `/health`.
-* Reverse proxying (Traefik/Nginx) with standard HTTP headers is fully supported.
+* Reverse proxying (Traefik/Nginx) with standard HTTPS headers is fully supported.
 
 ---
 
