@@ -38,3 +38,5 @@ stremio-film-festivals
 
 /data/metas
 .DS_Store
+__pycache__/
+*.pyc
