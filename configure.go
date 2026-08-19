@@ -64,7 +64,7 @@ func BuildCustomManifest(selectedCatalogIDs []string, baseURL string) CustomMani
 
 	cm := CustomManifest{
 		ID:          "tv.deflix.stremio-film-festivals",
-		Name:        "Film Festivals",
+		Name:        "Film Festivals 2",
 		Description: "Discover arthouse, auteur, and award-winning cinema from Cannes, Venice, Berlinale, Locarno, Sundance, TIFF, Rotterdam, San Sebastián, Karlovy Vary, BFI London, IDFA, SXSW, FIPRESCI & the Oscars.",
 		Version:     version,
 		ResourceItems: []stremio.ResourceItem{
@@ -140,13 +140,16 @@ func HandleManifestMiddleware(c *fiber.Ctx) {
 		}
 	}
 
-	// Detect Base URL
+	// Detect Base URL (use Host header to ensure accurate port e.g. 127.0.0.1:8080)
 	protocol := "http"
 	if c.Secure() || c.Get("X-Forwarded-Proto") == "https" {
 		protocol = "https"
 	}
-	host := c.Hostname()
-	baseURL := fmt.Sprintf("%s://%s", protocol, host)
+	hostHeader := c.Get("Host")
+	if hostHeader == "" {
+		hostHeader = c.Hostname()
+	}
+	baseURL := fmt.Sprintf("%s://%s", protocol, hostHeader)
 
 	manifest := BuildCustomManifest(selectedIDs, baseURL)
 	c.Set(fiber.HeaderContentType, "application/json; charset=utf-8")
@@ -216,13 +219,6 @@ func GroupCatalogsByFestival() []FestivalGroup {
 func HandleConfigureEndpoint(c *fiber.Ctx) {
 	groups := GroupCatalogsByFestival()
 
-	protocol := "http"
-	if c.Secure() || c.Get("X-Forwarded-Proto") == "https" {
-		protocol = "https"
-	}
-	host := c.Hostname()
-	currentHost := fmt.Sprintf("%s://%s", protocol, host)
-
 	var builder strings.Builder
 	for _, g := range groups {
 		builder.WriteString(fmt.Sprintf(`<div class="group-card">
@@ -252,7 +248,7 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Film Festivals — Stremio Addon Configuration</title>
+	<title>Film Festivals 2 — Stremio Addon Configuration</title>
 	<link rel="icon" type="image/png" href="/logo.png">
 	<style>
 		:root {
@@ -296,12 +292,23 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			margin-bottom: 32px;
 		}
 
+		.logo-wrap {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin: 0 auto 16px auto;
+		}
+
 		.logo {
-			width: 96px;
-			height: 96px;
-			border-radius: 20px;
-			box-shadow: 0 10px 30px rgba(142, 68, 173, 0.35);
-			margin-bottom: 16px;
+			width: 110px;
+			height: 110px;
+			border-radius: 24px;
+			box-shadow: 0 12px 36px rgba(142, 68, 173, 0.45);
+			object-fit: contain;
+			object-position: center;
+			background: #1e1e1e;
+			display: block;
+			padding: 6px;
 		}
 
 		h1 {
@@ -557,9 +564,20 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			border-radius: 8px;
 			padding: 10px 14px;
 			font-family: monospace;
-			font-size: 0.82rem;
+			font-size: 0.84rem;
 			color: var(--text-muted);
 			word-break: break-all;
+			user-select: all;
+		}
+
+		.install-tip {
+			font-size: 0.82rem;
+			color: var(--text-muted);
+			line-height: 1.4;
+		}
+
+		.install-tip strong {
+			color: var(--text-main);
 		}
 
 		.toast {
@@ -587,8 +605,10 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 <body>
 	<div class="container">
 		<header>
-			<img src="/logo.png" alt="Film Festivals Logo" class="logo">
-			<h1>Film Festivals</h1>
+			<div class="logo-wrap">
+				<img src="/logo.png" alt="Film Festivals 2 Logo" class="logo">
+			</div>
+			<h1>Film Festivals 2</h1>
 			<p class="subtitle">Customize your festival discovery catalogs in Stremio. Select the festival sections you want to appear in your Discover movies menu.</p>
 		</header>
 
@@ -616,6 +636,7 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 				</button>
 			</div>
 			<div id="manifest-url-display" class="url-display"></div>
+			<p class="install-tip">💡 <strong>Tip:</strong> If clicking <strong>Install in Stremio</strong> does not automatically open Stremio Desktop, copy the Manifest URL above and paste it directly into the search bar under Stremio's <strong>Addons</strong> menu.</p>
 		</div>
 	</div>
 
@@ -623,7 +644,6 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 
 	<script>
 		const totalCatalogs = 38;
-		const host = "%s";
 
 		const presetBigThree = [
 			'cannes-palme-dor', 'cannes-grand-prix', 'cannes-jury-prize', 'cannes-best-director', 'cannes-best-screenplay', 'cannes-best-actress', 'cannes-best-actor',
@@ -652,17 +672,18 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			
 			document.getElementById('selection-badge').innerText = count + " of " + totalCatalogs + " selected";
 
-			let httpUrl = host + "/manifest.json";
-			let stremioUrl = host.replace(/^https?:\/\//, "stremio://") + "/manifest.json";
+			const origin = window.location.origin;
+			const host = window.location.host;
 
+			let query = "";
 			if (count < totalCatalogs && count > 0) {
-				const query = "?festivals=" + selected.join(",");
-				httpUrl += query;
-				stremioUrl += query;
+				query = "?festivals=" + selected.join(",");
 			} else if (count === 0) {
-				httpUrl += "?festivals=none";
-				stremioUrl += "?festivals=none";
+				query = "?festivals=none";
 			}
+
+			const httpUrl = origin + "/manifest.json" + query;
+			const stremioUrl = "stremio://" + host + "/manifest.json" + query;
 
 			document.getElementById('manifest-url-display').innerText = httpUrl;
 			document.getElementById('btn-install').href = stremioUrl;
@@ -694,7 +715,7 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 		updateManifestURL();
 	</script>
 </body>
-</html>`, builder.String(), currentHost)
+</html>`, builder.String())
 
 	c.Set(fiber.HeaderContentType, "text/html; charset=utf-8")
 	c.Set(fiber.HeaderCacheControl, "no-cache")

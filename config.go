@@ -372,7 +372,7 @@ func BuildManifest() stremio.Manifest {
 
 	return stremio.Manifest{
 		ID:          "tv.deflix.stremio-film-festivals",
-		Name:        "Film Festivals",
+		Name:        "Film Festivals 2",
 		Description: "Comprehensive catalogs of world-renowned arthouse, auteur, and international film festival award winners: Cannes, Venice, Berlinale, Locarno, Sundance, TIFF, Rotterdam, San Sebastián, Karlovy Vary, BFI London, IDFA, SXSW, FIPRESCI & Academy Awards.",
 		Version:     version,
 

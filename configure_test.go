@@ -28,7 +28,7 @@ func TestBuildCustomManifestAll(t *testing.T) {
 		t.Fatalf("Unexpected manifest ID: %s", manifest.ID)
 	}
 
-	if manifest.Name != "Film Festivals" {
+	if manifest.Name != "Film Festivals 2" {
 		t.Fatalf("Unexpected manifest Name: %s", manifest.Name)
 	}
 
