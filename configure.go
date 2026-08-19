@@ -655,7 +655,10 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 		<div class="action-footer">
 			<div class="actions-row">
 				<a id="btn-install" href="#" class="btn-primary">
-					<span>Install in Stremio (1-Click)</span>
+					<span>Install in Stremio (App)</span>
+				</a>
+				<a id="btn-install-web" href="#" target="_blank" rel="noopener" class="btn-secondary">
+					🌐 Open in Stremio Web
 				</a>
 				<button class="btn-secondary" onclick="copyManifestURL()">
 					📋 Copy Manifest URL
@@ -706,6 +709,7 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			
 			document.getElementById('selection-badge').innerText = count + " of " + totalCatalogs + " selected";
 
+			// Dynamic frontend URL resolution using browser location
 			const origin = window.location.origin;
 			const host = window.location.host;
 
@@ -718,9 +722,12 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 
 			const httpUrl = origin + "/manifest.json" + query;
 			const stremioUrl = "stremio://" + host + "/manifest.json" + query;
+			const webStremioUrl = "https://web.stremio.com/#/addons?addon=" + encodeURIComponent(httpUrl);
 
 			document.getElementById('manifest-url-display').innerText = httpUrl;
 			document.getElementById('btn-install').href = stremioUrl;
+			const btnWeb = document.getElementById('btn-install-web');
+			if (btnWeb) btnWeb.href = webStremioUrl;
 		}
 
 		function selectAll(checked) {
