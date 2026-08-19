@@ -1,5 +1,6 @@
 year,title,IMDb ID
 2025,The Secret Agent,tt27847051
+2025,Fatherland,tt37304295
 2024,Grand Tour,tt27180099
 2023,The Taste of Things,tt19760052
 2022,Decision to Leave,tt12477480
@@ -8,6 +9,7 @@ year,title,IMDb ID
 2018,Cold War,tt6543652
 2017,The Beguiled,tt5592248
 2016,Personal Shopper,tt4714782
+2016,Graduation,tt4936450
 2015,The Assassin,tt3508840
 2014,Foxcatcher,tt1100089
 2013,Heli,tt2852376
@@ -22,8 +24,9 @@ year,title,IMDb ID
 2004,Exils,tt0400420
 2003,Elephant,tt0363589
 2002,Punch-Drunk Love,tt0272338
+2002,Chi-hwa-seon,tt0317234
 2001,The Man Who Wasn't There,tt0243133
-2001,David Lynch,tt1705102
+2001,Mulholland Drive,tt0166924
 2000,Yi Yi,tt0244316
 1999,All About My Mother,tt0185125
 1998,The General,tt0120706
@@ -42,16 +45,17 @@ year,title,IMDb ID
 1985,Rendez-vous,tt0089902
 1984,A Sunday in the Country,tt0088318
 1983,L'Argent,tt0085180
-1983,Andrei Tarkovsky,tt2638384
+1983,Nostalghia,tt0086022
 1982,Fitzcarraldo,tt0083946
 1979,Days of Heaven,tt0077405
 1978,Empire of Passion,tt0077132
 1976,Down and Dirty,tt0074252
 1975,Orders,tt0071949
-1975,Costa-Gavras,tt0065234
+1975,Special Section,tt0073679
 1972,Red Psalm,tt0067467
 1970,Leo the Last,tt0065974
 1969,Antonio das Mortes,tt0064256
+1969,All My Compatriots,tt0063791
 1967,Ten Thousand Days,tt0059838
 1966,Lenin in Poland,tt0060625
 1965,Forest of the Hanged,tt0058439
@@ -61,6 +65,7 @@ year,title,IMDb ID
 1957,A Man Escaped,tt0049902
 1956,Othello,tt0048455
 1955,Rififi,tt0048021
+1955,Heroes of Shipka,tt0047021
 1952,Fanfan la Tulipe,tt0044602
 1951,Los Olvidados,tt0042804
 1949,The Walls of Malapaga,tt0040137

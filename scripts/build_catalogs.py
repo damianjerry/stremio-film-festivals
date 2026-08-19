@@ -2,13 +2,13 @@
 """
 High-Precision Film Festival Data Extractor and Validator
 Extracts verified festival winner lists from Wikipedia / Wikidata / Cinemeta,
-enforcing multi-signal verification:
+enforcing multi-signal verification and global safeguards:
   1. Strict decade/winner table selection (ignoring multiple-winners, statistics, and career tables)
-  2. Film link isolation (extracting film titles from italic tags or designated film columns, never actor/director biographies)
-  3. Proper continuation-row handling for tied winners with rowspan Year cells
-  4. Canonical classic dictionary + Wikidata P345 property matching
-  5. Multi-signal Cinemeta validation (title similarity >= 75%, year tolerance <= 2 years, type == movie)
-  6. Maximum year filter (<= 2025) to reject speculative / future entries
+  2. Film link isolation using unified column offset math for normal and continuation rows
+  3. Global Rule A (Person Rejection): Rejection of director/actor biography links and rows where title matches the person column
+  4. Global Rule B (Type & Genre Enforcement): Strict movie type validation and rejection of biographical documentary fallbacks
+  5. Global Rule C (ID Sanitization): Final sanitization pass stripping non-alphanumeric chars and enforcing Unix \n line endings
+  6. Canonical landmark film dictionary
 """
 
 import os
@@ -194,6 +194,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "House of Games": "tt0093223",
     "Scarecrow": "tt0070643",
     "Stars at Noon": "tt10354106",
+    "The Man Who Wasn't There": "tt0243133",
     "Gloria": "tt0080798",
     "The Man in the White Suit": "tt0044876",
     "Repulsion": "tt0059646",
@@ -214,7 +215,7 @@ CANONICAL_FILM_IMDB_MAPPINGS = {
     "Emilia Pérez": "tt20221436",
     "Kinds of Kindness": "tt22408160",
     "The Zone of Interest": "tt7160372",
-    "All We Imagine as Light": "tt27823528",
+    "All We Imagine as Light": "tt32086077",
     "Linha de Passe": "tt0803029",
 }
 
@@ -248,18 +249,31 @@ def clean_title(title):
     title = title.strip().strip('"\'')
     return title
 
-def is_note_or_cancellation(text):
-    text_lower = text.lower()
-    patterns = [
+def is_person_or_note_entity(text, href=''):
+    text_lower = text.lower().strip()
+    href_lower = href.lower().strip()
+
+    # Reject non-movie notes / cancellations
+    note_patterns = [
         r'\boutbreak\b', r'\bsecond world war\b', r'\bworld war ii\b',
         r'\bcancelled\b', r'\bno festival\b', r'\bnot held\b',
         r'\bno award\b', r'\bnot awarded\b', r'\bno official award\b',
         r'\btimeline of\b', r'\bedition\b', r'\btied\b', r'\bjury resigned\b',
         r'\bfestival director\b', r'\bjewish state\b', r'\bhonorary\b'
     ]
-    return any(re.search(p, text_lower) for p in patterns)
+    if any(re.search(p, text_lower) for p in note_patterns):
+        return True
 
-def resolve_imdb_id_strict(wiki_title, display_title="", year=None):
+    # Rule A: Reject person biography wiki articles
+    if any(href_lower.endswith(suf) for suf in [
+        '_(director)', '_(actor)', '_(actress)', '_(filmmaker)',
+        '_(screenwriter)', '_(musician)', '_(artist)', '_(writer)'
+    ]):
+        return True
+
+    return False
+
+def resolve_imdb_id_strict(wiki_title, display_title="", year=None, person_name=None):
     clean_disp = clean_title(display_title or wiki_title)
     if clean_disp in CANONICAL_FILM_IMDB_MAPPINGS:
         return CANONICAL_FILM_IMDB_MAPPINGS[clean_disp]
@@ -270,8 +284,14 @@ def resolve_imdb_id_strict(wiki_title, display_title="", year=None):
 
     imdb_id = None
 
+    # Rule A: Reject if clean title matches person_name
+    if person_name:
+        clean_person = clean_title(person_name).lower()
+        if clean_disp.lower() == clean_person or fuzz.ratio(clean_disp.lower(), clean_person) >= 85:
+            return None
+
     # 1. Try Wikidata via Wikipedia pageprops & external links
-    if wiki_title:
+    if wiki_title and not is_person_or_note_entity(clean_disp, wiki_title):
         title_clean = wiki_title.replace('_', ' ').strip()
         data = http_get_json('https://en.wikipedia.org/w/api.php', {
             'action': 'query',
@@ -309,17 +329,25 @@ def resolve_imdb_id_strict(wiki_title, display_title="", year=None):
                         imdb_id = val
                         break
 
-    # 2. Try Cinemeta search API with STRICT multi-signal validation
+    # 2. Rule B: Try Cinemeta search API with STRICT multi-signal validation & type enforcement
     search_query = display_title or wiki_title
-    if not imdb_id and search_query:
+    if not imdb_id and search_query and not is_person_or_note_entity(clean_disp, wiki_title):
         clean_q = re.sub(r'\s*\([^)]*\)', '', search_query).strip()
         encoded_q = urllib.parse.quote(clean_q)
         cm_data = http_get_json(f'https://v3-cinemeta.strem.io/catalog/movie/top/search={encoded_q}.json', delay=0.1)
         metas = cm_data.get('metas', [])
         for m in metas:
+            # Rule B: Require movie type
+            if m.get('type') != 'movie':
+                continue
+
             m_name = m.get('name', '')
             m_year_str = str(m.get('releaseInfo', '') or m.get('year', ''))
             m_year = int(m_year_str[:4]) if re.match(r'^\d{4}', m_year_str) else None
+
+            # Reject biographical documentaries (<Person>: Something)
+            if ':' in m_name and clean_q.lower() in m_name.lower().split(':', 1)[0]:
+                continue
 
             sim_ratio = fuzz.ratio(clean_q.lower(), m_name.lower())
             sim_token = fuzz.token_set_ratio(clean_q.lower(), m_name.lower())
@@ -331,13 +359,15 @@ def resolve_imdb_id_strict(wiki_title, display_title="", year=None):
                 imdb_id = m.get('id')
                 break
 
-    if imdb_id and re.match(r'^tt\d{7,8}$', imdb_id):
-        IMDB_CACHE[cache_key] = imdb_id
-        return imdb_id
+    if imdb_id:
+        clean_imdb = re.sub(r'[^a-zA-Z0-9]', '', imdb_id)
+        if re.match(r'^tt\d{7,8}$', clean_imdb):
+            IMDB_CACHE[cache_key] = clean_imdb
+            return clean_imdb
 
     return None
 
-def extract_award_films_robust(soup, min_year=1920, max_year=2025):
+def extract_award_films_unified(soup, min_year=1920, max_year=2025):
     entries = []
     tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c and 'navbox' not in c)
 
@@ -359,10 +389,12 @@ def extract_award_films_robust(soup, min_year=1920, max_year=2025):
             headers = [th.get_text(strip=True).lower() for th in header_row.find_all(['th', 'td'])]
 
         film_col_idx = -1
+        person_col_idx = -1
         for idx, h in enumerate(headers):
-            if any(k in h for k in ['film', 'english title', 'title', 'película', 'titolo', 'obra']) and not any(bad in h for bad in ['director', 'actor', 'actress', 'screenwriter', 'recipient', 'sceneggiatura']):
+            if film_col_idx == -1 and any(k in h for k in ['film', 'english title', 'title', 'película', 'titolo', 'obra']) and not any(bad in h for bad in ['director', 'actor', 'actress', 'screenwriter', 'recipient', 'sceneggiatura', 'directed by']):
                 film_col_idx = idx
-                break
+            elif person_col_idx == -1 and any(k in h for k in ['director', 'actor', 'actress', 'screenwriter', 'recipient', 'regista', 'réalisateur']):
+                person_col_idx = idx
 
         current_year = None
         for tr in table.find_all('tr')[1:]:
@@ -378,102 +410,23 @@ def extract_award_films_robust(soup, min_year=1920, max_year=2025):
                 if yr > max_year or yr < min_year:
                     continue
                 current_year = yr
-                has_year_col = True
                 row_cells = cells[1:]
             else:
-                has_year_col = False
                 row_cells = cells
 
             if not current_year or current_year < min_year or current_year > max_year:
                 continue
 
             row_text = tr.get_text(strip=True)
-            if is_note_or_cancellation(row_text):
+            if is_person_or_note_entity(row_text):
                 continue
+
+            person_text = None
+            if person_col_idx != -1 and person_col_idx - 1 < len(row_cells):
+                person_text = row_cells[person_col_idx - 1].get_text(strip=True)
 
             chosen_a = None
-            target_cell = None
-            if has_year_col and film_col_idx != -1:
-                target_idx = film_col_idx - 1
-                if 0 <= target_idx < len(row_cells):
-                    target_cell = row_cells[target_idx]
-            elif not has_year_col and len(row_cells) > 0:
-                target_cell = row_cells[0]
-
-            if target_cell:
-                italic = target_cell.find(['i', 'em'])
-                if italic:
-                    chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
-                if not chosen_a:
-                    chosen_a = target_cell.find('a')
-
-            if not chosen_a:
-                for cell in row_cells:
-                    italic = cell.find(['i', 'em'])
-                    if italic:
-                        a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
-                        if a and a.get('href', '').startswith('/wiki/'):
-                            chosen_a = a
-                            break
-
-            if chosen_a:
-                href = chosen_a.get('href', '').replace('/wiki/', '')
-                title = clean_title(chosen_a.get_text(strip=True) or chosen_a.get('title', ''))
-                if href and title and len(title) > 1 and not is_note_or_cancellation(title):
-                    entries.append((current_year, title, href))
-
-    return entries
-
-def parse_acting_films(soup, min_year=1920, max_year=2025):
-    entries = []
-    tables = soup.find_all('table', class_=lambda c: c and 'wikitable' in c and 'navbox' not in c)
-    for table in tables:
-        prev_h = table.find_previous(['h2', 'h3', 'h4'])
-        if prev_h:
-            p_txt = prev_h.get_text().lower()
-            if any(skip in p_txt for skip in ['multiple', 'superlatives', 'records', 'statistics', 'see also', 'references', 'external links', 'notes']):
-                continue
-
-        headers = []
-        h_row = table.find('tr')
-        if h_row:
-            headers = [th.get_text(strip=True).lower() for th in h_row.find_all(['th', 'td'])]
-
-        film_col_idx = -1
-        for idx, h in enumerate(headers):
-            if any(k in h for k in ['film', 'english title', 'title', 'película', 'titolo', 'obra']) and not any(bad in h for bad in ['actor', 'actress', 'recipient', 'role', 'character']):
-                film_col_idx = idx
-                break
-
-        current_year = None
-        for tr in table.find_all('tr')[1:]:
-            cells = tr.find_all(['th', 'td'])
-            if not cells:
-                continue
-
-            first_text = cells[0].get_text(strip=True)
-            year_match = re.search(r'\b(19\d\d|20\d\d)\b', first_text)
-
-            if year_match and len(first_text) <= 14:
-                yr = int(year_match.group(1))
-                if yr > max_year or yr < min_year:
-                    continue
-                current_year = yr
-                has_year_col = True
-                row_cells = cells[1:]
-            else:
-                has_year_col = False
-                row_cells = cells
-
-            if not current_year or current_year < min_year or current_year > max_year:
-                continue
-
-            row_txt = tr.get_text(strip=True).lower()
-            if is_note_or_cancellation(row_txt):
-                continue
-
-            chosen_a = None
-            if has_year_col and film_col_idx != -1:
+            if film_col_idx != -1:
                 target_idx = film_col_idx - 1
                 if 0 <= target_idx < len(row_cells):
                     target_cell = row_cells[target_idx]
@@ -482,13 +435,6 @@ def parse_acting_films(soup, min_year=1920, max_year=2025):
                         chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
                     if not chosen_a:
                         chosen_a = target_cell.find('a')
-            elif not has_year_col and len(row_cells) > 0:
-                target_cell = row_cells[0] if film_col_idx == -1 or len(row_cells) == 1 else row_cells[min(1, len(row_cells)-1)]
-                italic = target_cell.find(['i', 'em'])
-                if italic:
-                    chosen_a = italic.find('a') or (italic.parent.name == 'a' and italic.parent)
-                if not chosen_a:
-                    chosen_a = target_cell.find('a')
 
             if not chosen_a:
                 for cell in row_cells:
@@ -502,8 +448,8 @@ def parse_acting_films(soup, min_year=1920, max_year=2025):
             if chosen_a:
                 href = chosen_a.get('href', '').replace('/wiki/', '')
                 title = clean_title(chosen_a.get_text(strip=True) or chosen_a.get('title', ''))
-                if href and title and len(title) > 1 and not is_note_or_cancellation(title):
-                    entries.append((current_year, title, href))
+                if href and title and len(title) > 1 and not is_person_or_note_entity(title, href):
+                    entries.append((current_year, title, href, person_text))
 
     return entries
 
@@ -533,8 +479,8 @@ def parse_tiff_peoples_choice(soup, min_year=1978, max_year=2025):
             if chosen_a:
                 href = chosen_a.get('href', '').replace('/wiki/', '')
                 title = clean_title(chosen_a.get_text(strip=True) or chosen_a.get('title', ''))
-                if href and title and not is_note_or_cancellation(title):
-                    entries.append((yr, title, href))
+                if href and title and not is_person_or_note_entity(title, href):
+                    entries.append((yr, title, href, None))
     return entries
 
 def parse_academy_awards_best_picture(soup, min_year=1927, max_year=2025):
@@ -560,7 +506,7 @@ def parse_academy_awards_best_picture(soup, min_year=1927, max_year=2025):
                     href = film_a.get('href', '').replace('/wiki/', '')
                     title = clean_title(film_a.get_text(strip=True))
                     if title:
-                        entries.append((yr, title, href))
+                        entries.append((yr, title, href, None))
     return entries
 
 def parse_sundance_category_strict(soup, pattern, neg_pattern=None, min_year=1984, max_year=2025):
@@ -603,8 +549,8 @@ def parse_sundance_category_strict(soup, pattern, neg_pattern=None, min_year=198
                     chosen_a = links[-1]
 
                 cleaned = clean_title(chosen_a.get_text(strip=True) or chosen_a.get('title', ''))
-                if cleaned and len(cleaned) > 1 and not re.match(r'^\d+$', cleaned) and not is_note_or_cancellation(cleaned):
-                    results.append((year, cleaned, chosen_a.get('href', '').replace('/wiki/', '')))
+                if cleaned and len(cleaned) > 1 and not re.match(r'^\d+$', cleaned) and not is_person_or_note_entity(cleaned, chosen_a.get('href', '')):
+                    results.append((year, cleaned, chosen_a.get('href', '').replace('/wiki/', ''), None))
                     seen_years.add(year)
                     break
     return results
@@ -636,8 +582,8 @@ def parse_rotterdam_tiger(soup, min_year=1995, max_year=2025):
                         href = a.get('href', '')
                         if href.startswith('/wiki/') and not any(x in href for x in ['Festival', 'festival', 'cite_note', 'List_of', 'Special:']):
                             cleaned = clean_title(a.get_text(strip=True) or a.get('title', ''))
-                            if cleaned and len(cleaned) > 1 and not re.match(r'^\d+$', cleaned) and not is_note_or_cancellation(cleaned):
-                                entries.append((current_year, cleaned, href.replace('/wiki/', '')))
+                            if cleaned and len(cleaned) > 1 and not re.match(r'^\d+$', cleaned) and not is_person_or_note_entity(cleaned, href):
+                                entries.append((current_year, cleaned, href.replace('/wiki/', ''), None))
                                 break
                     if entries and entries[-1][0] == current_year:
                         break
@@ -677,8 +623,8 @@ def parse_bfi_london_best_film(soup, min_year=1958, max_year=2025):
 
             if chosen_a:
                 cleaned = clean_title(chosen_a.get_text(strip=True) or chosen_a.get('title', ''))
-                if cleaned and len(cleaned) > 1 and not is_note_or_cancellation(cleaned):
-                    entries.append((yr, cleaned, chosen_a.get('href', '').replace('/wiki/', '')))
+                if cleaned and len(cleaned) > 1 and not is_person_or_note_entity(cleaned, chosen_a.get('href', '')):
+                    entries.append((yr, cleaned, chosen_a.get('href', '').replace('/wiki/', ''), None))
     return entries
 
 def parse_idfa_best_film(soup, min_year=1988, max_year=2025):
@@ -707,8 +653,8 @@ def parse_idfa_best_film(soup, min_year=1988, max_year=2025):
                     href = a.get('href', '')
                     if href.startswith('/wiki/') and not any(x in href for x in ['Festival', 'festival', 'cite_note', 'List_of', 'Special:']):
                         cleaned = clean_title(a.get_text(strip=True) or a.get('title', ''))
-                        if cleaned and len(cleaned) > 1 and not is_note_or_cancellation(cleaned):
-                            entries.append((current_year, cleaned, href.replace('/wiki/', '')))
+                        if cleaned and len(cleaned) > 1 and not is_person_or_note_entity(cleaned, href):
+                            entries.append((current_year, cleaned, href.replace('/wiki/', ''), None))
                             break
     return entries
 
@@ -725,8 +671,8 @@ def parse_fipresci_grand_prix(soup, min_year=1999, max_year=2025):
                 href = a.get('href', '')
                 if href.startswith('/wiki/') and not any(x in href for x in ['Festival', 'festival', 'cite_note', 'List_of', 'Special:', 'FIPRESCI']):
                     cleaned = clean_title(a.get_text(strip=True) or a.get('title', ''))
-                    if cleaned and len(cleaned) > 1 and not is_note_or_cancellation(cleaned):
-                        entries.append((yr, cleaned, href.replace('/wiki/', '')))
+                    if cleaned and len(cleaned) > 1 and not is_person_or_note_entity(cleaned, href):
+                        entries.append((yr, cleaned, href.replace('/wiki/', ''), None))
                         break
     return entries
 
@@ -767,16 +713,21 @@ def write_catalog_csv(catalog_id, records, legacy_filename=None):
     unique_records = []
     sorted_records = sorted(records, key=lambda r: int(r[0]), reverse=True)
     for rec in sorted_records:
-        key = (rec[0], rec[2])
-        if key not in seen and rec[2] and rec[2].startswith('tt'):
+        # Rule C: Sanitize IMDb ID string
+        clean_imdb = re.sub(r'[^a-zA-Z0-9]', '', str(rec[2]).strip())
+        clean_year = str(rec[0]).strip()
+        clean_title_str = str(rec[1]).strip()
+
+        key = (clean_year, clean_imdb)
+        if key not in seen and clean_imdb.startswith('tt'):
             seen.add(key)
-            unique_records.append(rec)
+            unique_records.append([clean_year, clean_title_str, clean_imdb])
 
     with open(file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, lineterminator='\n')
         writer.writerow(["year", "title", "IMDb ID"])
         for r in unique_records:
-            writer.writerow([r[0], r[1], r[2]])
+            writer.writerow(r)
 
     print(f"  ✓ Written {len(unique_records)} records to {catalog_id}.csv")
 
@@ -786,7 +737,7 @@ def write_catalog_csv(catalog_id, records, legacy_filename=None):
             writer = csv.writer(f, lineterminator='\n')
             writer.writerow(["year", "title", "IMDb ID"])
             for r in unique_records:
-                writer.writerow([r[0], r[1], r[2]])
+                writer.writerow(r)
         print(f"  (Also updated legacy file: {legacy_filename})")
 
     return len(unique_records)
@@ -802,16 +753,21 @@ def process_catalog(catalog_id, wiki_page, hint='film_col', min_year=1920, legac
     if custom_parser:
         raw_entries = custom_parser(soup, min_year=min_year)
     else:
-        raw_entries = extract_award_films_robust(soup, min_year=min_year)
+        raw_entries = extract_award_films_unified(soup, min_year=min_year)
 
     if catalog_id == 'cannes-palme-dor':
-        raw_entries.append((1939, 'Union Pacific', 'Union_Pacific_(film)'))
+        raw_entries.append((1939, 'Union Pacific', 'Union_Pacific_(film)', None))
 
     print(f"  Extracted {len(raw_entries)} candidate raw entries")
 
     records = []
-    for yr, title, wiki_link in raw_entries:
-        imdb_id = resolve_imdb_id_strict(wiki_link, title, yr)
+    for item in raw_entries:
+        yr = item[0]
+        title = item[1]
+        wiki_link = item[2]
+        person_name = item[3] if len(item) > 3 else None
+
+        imdb_id = resolve_imdb_id_strict(wiki_link, title, yr, person_name=person_name)
         if imdb_id:
             records.append((yr, title, imdb_id))
         else:
@@ -820,6 +776,35 @@ def process_catalog(catalog_id, wiki_page, hint='film_col', min_year=1920, legac
     save_cache(IMDB_CACHE)
     count = write_catalog_csv(catalog_id, records, legacy_filename=legacy_file)
     return count
+
+def sanitize_all_csv_files():
+    """Rule C: Final verification pass over all CSV files in data/"""
+    print("\nExecuting final Rule C CSV Sanitization Pass...")
+    csv_files = [os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
+    for file_path in csv_files:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            if not header:
+                continue
+            rows = list(reader)
+
+        sanitized_rows = []
+        for r in rows:
+            if len(r) >= 3:
+                clean_y = r[0].strip()
+                clean_t = r[1].strip()
+                clean_id = re.sub(r'[^a-zA-Z0-9]', '', r[2].strip())
+                if clean_id.startswith('tt'):
+                    sanitized_rows.append([clean_y, clean_t, clean_id])
+
+        with open(file_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f, lineterminator='\n')
+            writer.writerow(["year", "title", "IMDb ID"])
+            for r in sanitized_rows:
+                writer.writerow(r)
+
+    print(f"✓ Sanitized {len(csv_files)} CSV files with strict Unix line endings.")
 
 def main():
     print("==================================================")
@@ -832,24 +817,24 @@ def main():
     process_catalog('cannes-jury-prize', 'Jury Prize (Cannes Film Festival)')
     process_catalog('cannes-best-director', 'Cannes Film Festival Award for Best Director')
     process_catalog('cannes-best-screenplay', 'Cannes Film Festival Award for Best Screenplay')
-    process_catalog('cannes-best-actress', 'Cannes Film Festival Award for Best Actress', custom_parser=parse_acting_films)
-    process_catalog('cannes-best-actor', 'Cannes Film Festival Award for Best Actor', custom_parser=parse_acting_films)
+    process_catalog('cannes-best-actress', 'Cannes Film Festival Award for Best Actress')
+    process_catalog('cannes-best-actor', 'Cannes Film Festival Award for Best Actor')
 
     # 2. VENICE (6 catalogs)
     process_catalog('venice-golden-lion', 'Golden Lion', legacy_file='golden-lion-winners.csv')
     process_catalog('venice-grand-jury-prize', 'Grand Jury Prize (Venice Film Festival)')
     process_catalog('venice-silver-lion-director', 'Silver Lion')
     process_catalog('venice-best-screenplay', 'Golden Osella')
-    process_catalog('venice-coppa-volpi-actress', 'Volpi Cup for Best Actress', custom_parser=parse_acting_films)
-    process_catalog('venice-coppa-volpi-actor', 'Volpi Cup for Best Actor', custom_parser=parse_acting_films)
+    process_catalog('venice-coppa-volpi-actress', 'Volpi Cup for Best Actress')
+    process_catalog('venice-coppa-volpi-actor', 'Volpi Cup for Best Actor')
 
     # 3. BERLIN (6 catalogs)
     process_catalog('berlin-golden-bear', 'Golden Bear', legacy_file='golden-bear-winners.csv')
     process_catalog('berlin-silver-bear-grand-jury', 'Silver Bear Grand Jury Prize')
     process_catalog('berlin-silver-bear-director', 'Silver Bear for Best Director')
     process_catalog('berlin-silver-bear-screenplay', 'Silver Bear for Best Screenplay')
-    process_catalog('berlin-silver-bear-actress', 'Silver Bear for Best Actress', custom_parser=parse_acting_films)
-    process_catalog('berlin-silver-bear-actor', 'Silver Bear for Best Actor', custom_parser=parse_acting_films)
+    process_catalog('berlin-silver-bear-actress', 'Silver Bear for Best Actress')
+    process_catalog('berlin-silver-bear-actor', 'Silver Bear for Best Actor')
 
     # 4. LOCARNO (3 catalogs)
     process_catalog('locarno-golden-leopard', 'Golden Leopard')
@@ -897,6 +882,9 @@ def main():
 
     # 14. ACADEMY AWARDS (1 catalog)
     process_catalog('academy-awards-best-picture', 'Academy Award for Best Picture', custom_parser=parse_academy_awards_best_picture, legacy_file='academy-awards-winners.csv')
+
+    # Final Rule C Sanitization
+    sanitize_all_csv_files()
 
     save_cache(IMDB_CACHE)
     print("\n==================================================")

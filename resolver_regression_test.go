@@ -169,6 +169,8 @@ func TestRegressionCanonicalLandmarkMappings(t *testing.T) {
 		"cannes-palme-dor:2024":           "tt28607951",// Anora
 		"cannes-palme-dor:1973":           "tt0070643", // Scarecrow
 		"cannes-grand-prix:2022":          "tt10354106",// Stars at Noon
+		"cannes-grand-prix:2024":          "tt32086077",// All We Imagine as Light
+		"cannes-best-director:2001":       "tt0166924", // Mulholland Drive
 		"cannes-best-actress:2008":        "tt0803029", // Linha de Passe
 	}
 
