@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber"
 )
 
-//go:embed "film festivals logo.png"
+//go:embed "film festivals 2 logo.png"
 var logoBytes []byte
 
 // CustomManifest represents the manifest JSON with configurable behavior hints

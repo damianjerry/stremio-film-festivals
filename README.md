@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="film%20festivals%20logo.png" alt="Film Festivals 2 Logo" width="160" height="160" style="border-radius: 28px;">
+  <img src="film%20festivals%202%20logo.png" alt="Film Festivals 2 Logo" width="160" height="160" style="border-radius: 28px;">
 </p>
 
 # <p align="center">Film Festivals 2 | ElfHosted</p>
