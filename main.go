@@ -83,12 +83,21 @@ func main() {
 		logger.Fatal("Couldn't create Stremio addon", zap.Error(err))
 	}
 
+	// 7. Register Middleware for Dynamic Manifest Filtering
+	addon.AddMiddleware("", HandleManifestMiddleware)
+
+	// 8. Register Configuration UI & Logo Endpoints
+	addon.AddEndpoint("GET", "/configure", HandleConfigureEndpoint)
+	addon.AddEndpoint("GET", "/:userData/configure", HandleConfigureEndpoint)
+	addon.AddEndpoint("GET", "/logo.png", HandleLogoEndpoint)
+	addon.AddEndpoint("GET", "/:userData/logo.png", HandleLogoEndpoint)
+
 	logger.Info("Server running and listening for Stremio requests",
 		zap.String("bindAddr", *bindAddr),
 		zap.Int("port", *port),
 	)
 
-	// 7. Run Server (graceful shutdown on SIGINT / SIGTERM)
+	// 9. Run Server (graceful shutdown on SIGINT / SIGTERM)
 	addon.Run()
 }
 

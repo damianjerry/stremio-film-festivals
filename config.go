@@ -385,8 +385,8 @@ func BuildManifest() stremio.Manifest {
 		Catalogs: catalogs,
 
 		IDprefixes: []string{"tt"},
-		Background: "https://www.deflix.tv/images/Logo-1024px.png",
-		Logo:       "https://www.deflix.tv/images/Logo-250px.png",
+		Background: "https://images.metahub.space/background/medium/tt0078788/img",
+		Logo:       "/logo.png",
 	}
 }
 
