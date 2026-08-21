@@ -5,7 +5,10 @@
       "release-type": "go",
       "package-name": "stremio-film-festivals",
       "include-component-in-tag": false,
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "config.go"
+      ]
     }
   }
 }

@@ -5,7 +5,13 @@ import (
 )
 
 const (
-	version     = "1.0.0"
+	// Kept in step with the released tag by release-please -- see the
+	// "extra-files" entry in release-please-config.json. The annotation
+	// comment is load-bearing; without it this silently goes stale and the
+	// manifest advertises an old version, which is how Stremio clients decide
+	// whether an installed addon has an update.
+	version = "1.1.0" // x-release-please-version
+
 	redirectURL = "https://www.deflix.tv"
 )
 
