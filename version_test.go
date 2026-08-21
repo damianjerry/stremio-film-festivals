@@ -73,3 +73,37 @@ func TestGetEnvAllowEmptyKeepsEmptyValues(t *testing.T) {
 		t.Fatalf("a set value should win over the default, got %q", got)
 	}
 }
+
+// TestConfigurePageAvoidsBlockedClassNames keeps the hosting-attribution card
+// out of the way of content blockers. EasyList -- the default list in uBlock
+// Origin, AdGuard, Brave and others -- ships a generic cosmetic rule for the
+// class "sponsor-text" that hides any element carrying it, on every site. The
+// card used exactly that class, so the attribution paragraph was invisible to
+// every visitor running a blocker, while the logo beside it rendered normally.
+//
+// This reads the source rather than a rendered page because the markup is built
+// inline in HandleConfigureEndpoint with no separately callable renderer. That
+// is a little unusual for a test, but it is the honest way to lint a string
+// literal, and it covers the CSS block as well as the markup.
+func TestConfigurePageAvoidsBlockedClassNames(t *testing.T) {
+	source, err := os.ReadFile("configure.go")
+	if err != nil {
+		t.Fatalf("Couldn't read configure.go: %v", err)
+	}
+	page := string(source)
+
+	// "sponsor-text" is the class EasyList actually blocks today. The others are
+	// close enough neighbours to be worth staying clear of, since generic rules
+	// accrete over time and this failure mode is silent.
+	for _, blocked := range []string{"sponsor-text", "sponsor-content", "sponsor-logo", "sponsored"} {
+		// Skip this test file's own mention of the names in the loop above.
+		if strings.Contains(page, `class="`+blocked) || strings.Contains(page, "."+blocked+" {") {
+			t.Fatalf("the configure page uses the class %q, which content blockers hide with a generic cosmetic rule -- the attribution silently disappears for anyone running uBlock Origin, AdGuard or Brave", blocked)
+		}
+	}
+
+	// ...and the attribution itself has to survive the renaming.
+	if !strings.Contains(page, "instance-note-text") {
+		t.Fatal("the hosting attribution card is missing from the configure page")
+	}
+}
