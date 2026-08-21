@@ -12,7 +12,13 @@ const (
 	// whether an installed addon has an update.
 	version = "1.1.0" // x-release-please-version
 
-	redirectURL = "https://www.deflix.tv"
+	// defaultRedirectURL is where a bare GET "/" lands. Relative on purpose:
+	// it resolves against whatever host the addon is served from, so it works
+	// for every deployment without being configured. Overridable with the
+	// -redirect flag / REDIRECT_URL env var; set it empty to turn the root
+	// redirect off entirely and let "/" 404, which is go-stremio's behaviour
+	// when RedirectURL is unset.
+	defaultRedirectURL = "/configure"
 )
 
 // CatalogConfig holds metadata and configuration for a festival catalog.

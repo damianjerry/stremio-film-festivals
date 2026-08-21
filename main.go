@@ -19,6 +19,7 @@ var (
 	logLevel  = flag.String("logLevel", getEnv("LOG_LEVEL", "info"), `Log level: "debug", "info", "warn", "error"`)
 	cacheAge  = flag.String("cacheAge", getEnv("CACHE_AGE", "24h"), `Max age for client/proxy caching (e.g. "24h")`)
 	orderMode = flag.String("order", getEnv("ORDER_MODE", OrderModeDailyRandom), `Catalog ordering mode: "daily-random" (default), "chronological-desc", "chronological-asc"`)
+	redirect  = flag.String("redirect", getEnvAllowEmpty("REDIRECT_URL", defaultRedirectURL), `Where a request for the addon root ("/") is redirected. Relative paths are resolved against the serving host. Empty disables the redirect, and "/" returns 404.`)
 )
 
 func init() {
@@ -37,6 +38,7 @@ func main() {
 	logger.Info("Starting Stremio Film Festivals Addon",
 		zap.String("version", version),
 		zap.String("orderMode", *orderMode),
+		zap.String("redirectURL", *redirect),
 	)
 
 	// 2. Parse Cache Age Duration
@@ -72,7 +74,7 @@ func main() {
 		BindAddr:            *bindAddr,
 		Port:                *port,
 		Logger:              logger,
-		RedirectURL:         redirectURL,
+		RedirectURL:         *redirect,
 		CacheAgeCatalogs:    cacheAgeDuration,
 		CachePublicCatalogs: true,
 		HandleEtagCatalogs:  true,
@@ -119,6 +121,18 @@ func resolveDataDir(dir string) string {
 
 func getEnv(key, defaultVal string) string {
 	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultVal
+}
+
+// getEnvAllowEmpty is getEnv for settings where "" is a meaningful value rather
+// than shorthand for "unset". REDIRECT_URL needs it: turning the root redirect
+// off is done by setting it empty, and the environment is the only way to
+// configure a container, so collapsing "" into the default would make that
+// documented option unreachable there.
+func getEnvAllowEmpty(key, defaultVal string) string {
+	if val, ok := os.LookupEnv(key); ok {
 		return val
 	}
 	return defaultVal
