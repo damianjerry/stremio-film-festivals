@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/damianjerry/stremio-film-festivals/compare/v1.1.0...v1.1.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **manifest:** use schema-compliant string form for resources ([17637c6](https://github.com/damianjerry/stremio-film-festivals/commit/17637c6c37ca2821d6261beb98c65a286957e86b))
+
 ## [1.1.0](https://github.com/damianjerry/stremio-film-festivals/compare/v1.0.0...v1.1.0) (2026-08-19)
 
 
