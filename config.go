@@ -378,7 +378,8 @@ func BuildManifest() stremio.Manifest {
 
 		ResourceItems: []stremio.ResourceItem{
 			{
-				Name: "catalog",
+				Name:  "catalog",
+				Types: []string{"movie"},
 			},
 		},
 		Types:    []string{"movie"},

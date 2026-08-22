@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -46,6 +48,17 @@ func TestBuildCustomManifestAll(t *testing.T) {
 
 	if manifest.BehaviorHints.ConfigurationRequired {
 		t.Fatal("Expected manifest behaviorHints.configurationRequired to be false")
+	}
+
+	rawJSON, err := json.Marshal(manifest)
+	if err != nil {
+		t.Fatalf("Failed to marshal manifest to JSON: %v", err)
+	}
+	if strings.Contains(string(rawJSON), `"types":null`) || strings.Contains(string(rawJSON), `null`) {
+		t.Fatalf("Manifest JSON contains illegal null values: %s", string(rawJSON))
+	}
+	if !strings.Contains(string(rawJSON), `"resources":["catalog"]`) {
+		t.Fatalf("Manifest JSON does not contain schema-compliant \"resources\":[\"catalog\"]: %s", string(rawJSON))
 	}
 }
 

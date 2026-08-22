@@ -20,7 +20,7 @@ type CustomManifest struct {
 	Name          string                 `json:"name"`
 	Description   string                 `json:"description"`
 	Version       string                 `json:"version"`
-	ResourceItems []stremio.ResourceItem `json:"resources,omitempty"`
+	Resources     []string               `json:"resources"`
 	Types         []string               `json:"types"`
 	Catalogs      []stremio.CatalogItem  `json:"catalogs"`
 	IDprefixes    []string               `json:"idPrefixes,omitempty"`
@@ -67,12 +67,8 @@ func BuildCustomManifest(selectedCatalogIDs []string, baseURL string) CustomMani
 		Name:        "Film Festivals 2 | ElfHosted",
 		Description: "Discover arthouse, auteur, and award-winning cinema from Cannes, Venice, Berlinale, Locarno, Sundance, TIFF, Rotterdam, San Sebastián, Karlovy Vary, BFI London, IDFA, SXSW, FIPRESCI & the Oscars. Hosted on ElfHosted.",
 		Version:     version,
-		ResourceItems: []stremio.ResourceItem{
-			{
-				Name: "catalog",
-			},
-		},
-		Types:      []string{"movie"},
+		Resources:   []string{"catalog"},
+		Types:       []string{"movie"},
 		Catalogs:   catalogs,
 		IDprefixes: []string{"tt"},
 		Background: "https://images.metahub.space/background/medium/tt0078788/img",
