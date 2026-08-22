@@ -14,20 +14,27 @@ import (
 //go:embed "film festivals 2 logo.png"
 var logoBytes []byte
 
+// StremioAddonsConfig represents directory verification configuration for stremio-addons.net
+type StremioAddonsConfig struct {
+	Issuer    string `json:"issuer"`
+	Signature string `json:"signature"`
+}
+
 // CustomManifest represents the manifest JSON with configurable behavior hints
 type CustomManifest struct {
-	ID            string                 `json:"id"`
-	Name          string                 `json:"name"`
-	Description   string                 `json:"description"`
-	Version       string                 `json:"version"`
-	Resources     []string               `json:"resources"`
-	Types         []string               `json:"types"`
-	Catalogs      []stremio.CatalogItem  `json:"catalogs"`
-	IDprefixes    []string               `json:"idPrefixes,omitempty"`
-	Background    string                 `json:"background,omitempty"`
-	Logo          string                 `json:"logo,omitempty"`
-	ContactEmail  string                 `json:"contactEmail,omitempty"`
-	BehaviorHints struct {
+	ID                  string                 `json:"id"`
+	Name                string                 `json:"name"`
+	Description         string                 `json:"description"`
+	Version             string                 `json:"version"`
+	Resources           []string               `json:"resources"`
+	Types               []string               `json:"types"`
+	Catalogs            []stremio.CatalogItem  `json:"catalogs"`
+	IDprefixes          []string               `json:"idPrefixes,omitempty"`
+	Background          string                 `json:"background,omitempty"`
+	Logo                string                 `json:"logo,omitempty"`
+	ContactEmail        string                 `json:"contactEmail,omitempty"`
+	StremioAddonsConfig *StremioAddonsConfig   `json:"stremioAddonsConfig,omitempty"`
+	BehaviorHints       struct {
 		Configurable          bool `json:"configurable"`
 		ConfigurationRequired bool `json:"configurationRequired"`
 	} `json:"behaviorHints"`
@@ -73,6 +80,10 @@ func BuildCustomManifest(selectedCatalogIDs []string, baseURL string) CustomMani
 		IDprefixes: []string{"tt"},
 		Background: "https://images.metahub.space/background/medium/tt0078788/img",
 		Logo:       logoURL,
+		StremioAddonsConfig: &StremioAddonsConfig{
+			Issuer:    "https://stremio-addons.net",
+			Signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..Yi5-3h-7vZP06atz9l4sSg.1gA8HZHtec7ann-sF9nNlEc-8T6BLZXyvMvflz6-OR5drEU3JIDCQHQ-OAkh4K5jPUf0xVdNca8hGau6-Q0ltE0vrRqIBROwJ32vMGzigmyrggQUqKdG_JEI3edkkTvZ.OXH4OEUfJHF6Xdr4L0T6tg",
+		},
 	}
 
 	cm.BehaviorHints.Configurable = true

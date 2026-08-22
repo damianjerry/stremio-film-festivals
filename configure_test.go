@@ -50,6 +50,10 @@ func TestBuildCustomManifestAll(t *testing.T) {
 		t.Fatal("Expected manifest behaviorHints.configurationRequired to be false")
 	}
 
+	if manifest.StremioAddonsConfig == nil || manifest.StremioAddonsConfig.Issuer != "https://stremio-addons.net" {
+		t.Fatalf("Expected valid stremioAddonsConfig, got %+v", manifest.StremioAddonsConfig)
+	}
+
 	rawJSON, err := json.Marshal(manifest)
 	if err != nil {
 		t.Fatalf("Failed to marshal manifest to JSON: %v", err)
@@ -59,6 +63,9 @@ func TestBuildCustomManifestAll(t *testing.T) {
 	}
 	if !strings.Contains(string(rawJSON), `"resources":["catalog"]`) {
 		t.Fatalf("Manifest JSON does not contain schema-compliant \"resources\":[\"catalog\"]: %s", string(rawJSON))
+	}
+	if !strings.Contains(string(rawJSON), `"stremioAddonsConfig"`) || !strings.Contains(string(rawJSON), `"https://stremio-addons.net"`) {
+		t.Fatalf("Manifest JSON does not contain stremioAddonsConfig: %s", string(rawJSON))
 	}
 }
 
