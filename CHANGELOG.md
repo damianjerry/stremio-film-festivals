@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/damianjerry/stremio-film-festivals/compare/v1.1.1...v1.2.0) (2026-08-22)
+
+
+### Features
+
+* **manifest:** add stremioAddonsConfig validation signature for stremio-addons.net ([4aaa0c5](https://github.com/damianjerry/stremio-film-festivals/commit/4aaa0c544f9ce07dd8e77f60d528a2801275d42c))
+
 ## [1.1.1](https://github.com/damianjerry/stremio-film-festivals/compare/v1.1.0...v1.1.1) (2026-08-22)
 
 

@@ -10,7 +10,7 @@ const (
 	// comment is load-bearing; without it this silently goes stale and the
 	// manifest advertises an old version, which is how Stremio clients decide
 	// whether an installed addon has an update.
-	version = "1.1.0" // x-release-please-version
+	version = "1.2.0" // x-release-please-version
 
 	// defaultRedirectURL is where a bare GET "/" lands. Relative on purpose:
 	// it resolves against whatever host the addon is served from, so it works
