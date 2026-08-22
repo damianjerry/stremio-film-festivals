@@ -602,7 +602,14 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			color: var(--text-main);
 		}
 
-		.sponsor-content {
+		/* Class names here deliberately avoid the word "sponsor". EasyList --
+		   the default filter list in uBlock Origin, AdGuard, Brave and friends --
+		   carries a generic cosmetic rule, ##.sponsor-text, that hides ANY element
+		   with that class on every site. This card used it, so the attribution
+		   text vanished for every visitor running a blocker while the logo and the
+		   card around it stayed put -- a confusing way to fail, and it hides the
+		   one line the sponsorship is actually for. */
+		.instance-note {
 			background: var(--bg-surface);
 			border: 1px solid rgba(142, 68, 173, 0.35);
 			border-radius: var(--radius);
@@ -616,26 +623,26 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 		}
 
-		.sponsor-logo {
+		.instance-note-logo {
 			width: 64px;
 			height: 64px;
 			flex-shrink: 0;
 		}
 
-		.sponsor-text {
+		.instance-note-text {
 			font-size: 0.88rem;
 			color: var(--text-main);
 			line-height: 1.5;
 		}
 
-		.sponsor-text a {
+		.instance-note-text a {
 			color: #bb86fc;
 			text-decoration: none;
 			font-weight: 600;
 			transition: color 0.2s ease;
 		}
 
-		.sponsor-text a:hover {
+		.instance-note-text a:hover {
 			color: #ffffff;
 			text-decoration: underline;
 		}
@@ -671,9 +678,9 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 			<h1>Film Festivals 2 | ElfHosted</h1>
 			<p class="subtitle">Customize your festival discovery catalogs in Stremio. Discover award-winning arthouse, auteur, and international festival cinema.</p>
 			
-			<div class="sponsor-content flex items-start gap-4 text-left">
-				<img src="https://elfhosted.com/images/logo.svg" alt="ElfHosted Logo" class="sponsor-logo" width="64" height="64">
-				<p class="sponsor-text">This is the public instance of <a href="https://github.com/damianjerry/stremio-film-festivals" target="_blank" rel="noopener">Film Festivals 2</a>, sponsored by <a href="https://store.elfhosted.com/" target="_blank" rel="noopener">ElfHosted</a> ❤️<br><br>See our FREE <a href="https://stremio-addons-guide.elfhosted.com" target="_blank" rel="noopener">Stremio Addons Guide</a> for more great addons and features!</p>
+			<div class="instance-note flex items-start gap-4 text-left">
+				<img src="https://elfhosted.com/images/logo.svg" alt="ElfHosted Logo" class="instance-note-logo" width="64" height="64">
+				<p class="instance-note-text">This is the public instance of <a href="https://github.com/damianjerry/stremio-film-festivals" target="_blank" rel="noopener">Film Festivals 2</a>, sponsored by <a href="https://store.elfhosted.com/" target="_blank" rel="noopener">ElfHosted</a> ❤️<br><br>See our FREE <a href="https://stremio-addons-guide.elfhosted.com" target="_blank" rel="noopener">Stremio Addons Guide</a> for more great addons and features!</p>
 			</div>
 		</header>
 

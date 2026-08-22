@@ -1,0 +1,34 @@
+name: test
+
+# Note on coverage: release-please opens its PR with the default GITHUB_TOKEN,
+# and GitHub suppresses workflow events for anything that token creates -- so
+# this does NOT run on the release PR itself, which is where a broken version
+# rewrite would ideally be caught. It does run on the push to main after that PR
+# merges, so a stale version const surfaces immediately after the release rather
+# than at the next one. To gate the release PR itself, give release-please a PAT
+# or GitHub App token instead of GITHUB_TOKEN.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...

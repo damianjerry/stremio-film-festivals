@@ -5,8 +5,20 @@ import (
 )
 
 const (
-	version     = "1.0.0"
-	redirectURL = "https://www.deflix.tv"
+	// Kept in step with the released tag by release-please -- see the
+	// "extra-files" entry in release-please-config.json. The annotation
+	// comment is load-bearing; without it this silently goes stale and the
+	// manifest advertises an old version, which is how Stremio clients decide
+	// whether an installed addon has an update.
+	version = "1.1.0" // x-release-please-version
+
+	// defaultRedirectURL is where a bare GET "/" lands. Relative on purpose:
+	// it resolves against whatever host the addon is served from, so it works
+	// for every deployment without being configured. Overridable with the
+	// -redirect flag / REDIRECT_URL env var; set it empty to turn the root
+	// redirect off entirely and let "/" 404, which is go-stremio's behaviour
+	// when RedirectURL is unset.
+	defaultRedirectURL = "/configure"
 )
 
 // CatalogConfig holds metadata and configuration for a festival catalog.
