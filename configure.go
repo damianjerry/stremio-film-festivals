@@ -255,8 +255,9 @@ func HandleConfigureEndpoint(c *fiber.Ctx) {
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Film Festivals 2 | ElfHosted — Stremio Addon Configuration</title>
+	<title>Film Festivals 2 | ElfHosted</title>
 	<link rel="icon" type="image/png" href="/logo.png">
+	<link rel="shortcut icon" type="image/png" href="/logo.png">
 	<style>
 		:root {
 			--bg-base: #0f1117;

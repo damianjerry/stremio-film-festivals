@@ -88,11 +88,13 @@ func main() {
 	// 7. Register Middleware for Dynamic Manifest Filtering
 	addon.AddMiddleware("", HandleManifestMiddleware)
 
-	// 8. Register Configuration UI & Logo Endpoints
+	// 8. Register Configuration UI, Logo & Favicon Endpoints
 	addon.AddEndpoint("GET", "/configure", HandleConfigureEndpoint)
 	addon.AddEndpoint("GET", "/:userData/configure", HandleConfigureEndpoint)
 	addon.AddEndpoint("GET", "/logo.png", HandleLogoEndpoint)
 	addon.AddEndpoint("GET", "/:userData/logo.png", HandleLogoEndpoint)
+	addon.AddEndpoint("GET", "/favicon.ico", HandleLogoEndpoint)
+	addon.AddEndpoint("GET", "/:userData/favicon.ico", HandleLogoEndpoint)
 
 	logger.Info("Server running and listening for Stremio requests",
 		zap.String("bindAddr", *bindAddr),
